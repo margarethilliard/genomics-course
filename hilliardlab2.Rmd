@@ -43,6 +43,6 @@ freq_vector
 nuq_vector <- c("A", "T", "C", "G")
 sort(nuq_vector)
 ```
-# REFERENCES 
+# references 
 [references](references.bib)
 
