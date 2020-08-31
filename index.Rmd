@@ -4,13 +4,15 @@ author: "Margaret Hilliard"
 date: "8/31/2020"
 output: html_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-These are my lab reports from EvoGeno 
 
-[Lab 1](hilliardlab2.html)
+![](/Users/margarethilliard/Desktop/Evolutionary_Genomics/IMG_2867.jpeg)
 
-# REFERENCE 
-Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
+### Lab reports 
+#### [Lab 1](lab1_Hilliard.html)
+#### [Lab 2](/Users/margarethilliard/Desktop/Evolutionary_Genomics/lab2.html)
+
+### REFERENCE 
+#### Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
