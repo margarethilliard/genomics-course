@@ -18,4 +18,5 @@ date: "8/31/2020"
 output: html_document
 bibliography: data/references.bib
 ```
-
+# references 
+[references](references.bib)
