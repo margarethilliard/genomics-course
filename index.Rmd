@@ -9,9 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 [Lab 1](lab1_Hilliard.html)
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# REFERENCES
 title: "Evolutionary Genomics & Bioinformatics"
 author: "Margaret Hilliard"
 date: "8/31/2020"
 output: html_document
 bibliography: data/references.bib
+```
+
