@@ -7,9 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
-[Lab 1](file:///Users/margarethilliard/Desktop/Evolutionary_Genomics/genomics-course/lab1_Hilliard.html)
-
+[Lab 1](lab1_Hilliard.html)
 ```
 
 
