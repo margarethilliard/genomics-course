@@ -1,5 +1,5 @@
 ---
-title: "index"
+title: "Evolutionary Genomics and Bioinformatics"
 author: "Margaret Hilliard"
 date: "8/31/2020"
 output: html_document
@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 These are my lab reports from EvoGeno 
 
-[Lab 1](lab1_Hilliard.html)
-[Lab 2](hilliardlab2.html)
+[Lab 1](hilliardlab2.html)
 
 Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
