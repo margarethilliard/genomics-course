@@ -1,14 +1,9 @@
 ---
-title: "Example"
-author: "Margaret Hilliard"
-date: "8/31/2020"
+title: 'My Title'
+author: "Me me me me!"
 output: html_document
-bibliography: data/reference.bib
+bibliography: data/references.bib
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
 

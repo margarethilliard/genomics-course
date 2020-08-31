@@ -1,5 +1,5 @@
 ---
-title: "HilliardLab2"
+title: "EvoGeno"
 author: "Margaret Hilliard"
 date: "8/31/2020"
 output: html_document
@@ -8,15 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+These are my lab reports from EvoGeno 
+
 [Lab 1](lab1_Hilliard.html)
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-# REFERENCES
-title: "Evolutionary Genomics & Bioinformatics"
-author: "Margaret Hilliard"
-date: "8/31/2020"
-output: html_document
-bibliography: data/references.bib
-```
-# references 
-[references](references.bib)
+[Lab 2](hilliardlab2.html)
+
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].

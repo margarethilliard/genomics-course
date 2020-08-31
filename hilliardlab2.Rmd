@@ -3,6 +3,7 @@ title: "hilliardlab2"
 author: "Margaret Hilliard"
 date: "8/31/2020"
 output: html_document
+bibliography: references.bib
 ---
 ```{r}
 # Exercise 1 
@@ -43,6 +44,6 @@ freq_vector
 nuq_vector <- c("A", "T", "C", "G")
 sort(nuq_vector)
 ```
-# references 
-[references](references.bib)
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
 
+# REFERENCES
