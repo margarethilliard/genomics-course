@@ -1,5 +1,5 @@
 ---
-title: "EvoGeno"
+title: "index"
 author: "Margaret Hilliard"
 date: "8/31/2020"
 output: html_document
