@@ -1,7 +1,7 @@
 ---
 title: "Evolutionary Genomics and Bioinformatics"
 author: "Margaret Hilliard"
-date: "8/31/2020"
+date: "Fall 2020"
 output: html_document
 ---
 ```{r setup, include=FALSE}
@@ -11,8 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ![](images/IMG_2867.jpeg)
 
 ### lab reports:
-#### [Lab 1](/Users/margarethilliard/Desktop/Evolutionary_Genomics/lab1_Hilliard.html)
-#### [Lab 2](/Users/margarethilliard/Desktop/Evolutionary_Genomics/lab2.html)
+#### [Lab 1](lab1_Hilliard.html)
+#### [Lab 2](lab2.html)
 
 ### reference: 
 #### Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
