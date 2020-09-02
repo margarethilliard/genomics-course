@@ -10,9 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ![](images/IMG_2867.jpeg)
 
-### Lab reports 
+### lab reports:
 #### [Lab 1](/Users/margarethilliard/Desktop/Evolutionary_Genomics/lab1_Hilliard.html)
 #### [Lab 2](/Users/margarethilliard/Desktop/Evolutionary_Genomics/lab2.html)
 
-### REFERENCE 
+### reference: 
 #### Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
