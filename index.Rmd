@@ -10,9 +10,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ![](images/IMG_2867.jpeg)
 
-### lab reports:
-#### [Lab 1](lab1_Hilliard.html)
-#### [Lab 2](lab2.html)
+# lab reports:
+## R basics
+>- [Lab 1](lab1_Hilliard.html)
+>- [Lab 2](lab2.html)
+>- [Lab 3A](Lab3A.html)
+>- [Lab 3B](Lab3B.html)
 
-### reference: 
-#### Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
+# reference: 
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
