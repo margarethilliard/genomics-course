@@ -268,5 +268,6 @@ dim(surveys_complete)
 write_csv(surveys_complete, path = "data/surveys_complete.csv")
 ```
 Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
+
 # References 
 
