@@ -1,0 +1,183 @@
+---
+title: "Lab4"
+author: "Margaret Hilliard"
+date: "9/14/2020"
+output: html_document
+bibliography: /Users/margarethilliard/Desktop/Evolutionary_Genomics/genomics-course/data/references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, eval = FALSE)
+```
+
+```{r}
+library(tidyverse)
+install.packages("DT")
+library(DT)
+# read data directly from the Github site and rename columns to use underscrores rather than slashes
+report_03_11_2020 <-   read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/03-11-2020.csv")) %>%
+  rename(Country_Region = "Country/Region", Province_State = "Province/State")
+
+# check properties to make sure data was imported as expected 
+str(report_03_11_2020)
+
+# inspect the data frame 
+View(report_03_11_2020)
+```
+# Interactive data tables 
+```{r}
+datatable(report_03_11_2020)
+```
+# Exercises (Part 1)
+```{r}
+# find differences in format of daily reports from 3/13/20 - 9/13/20
+
+report_03_13_2020 <-   read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/03-13-2020.csv")) %>%
+  rename(Country_Region = "Country/Region", Province_State = "Province/State")
+
+# check if it was imported correctly 
+str(report_03_13_2020)
+
+# view the data 
+# View(report_03_13_2020)
+
+report_09_13_2020 <-   read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/09-13-2020.csv")) 
+
+# check if it was imported correctly 
+str(report_09_13_2020) # there are a lot more observations -- 3954 vs. 230 in March 
+
+# view the data 
+# View(report_09_13_2020) # "country/region" column has been renamed to "country_region"
+
+# many countries have multiple entries representing different regions (e.g. counties and states). To get the counts for a country we need to summarise the data. Use group_by() and summarize() to make a data frame (tibble) with total counts for each country
+
+Country_09_13_2020<- report_09_13_2020 %>%
+    group_by(Country_Region) %>%  #grouping the data by country
+    summarise(Total_cases = sum(Confirmed))
+    count = n()      #counts how many entries each country has
+
+View(Country_09_13_2020) 
+# get counts for confirmed cases per U.S state use filter() to select US and group_by and summarize as above.
+
+US_cases_9_13_20 <- report_09_13_2020 %>%
+  group_by(Country_Region, Province_State) %>%
+  filter(Country_Region == "US") %>% # show only US cases
+  summarise(Confirmed_cases = sum(Confirmed)) %>%
+  arrange(Province_State) 
+
+View(US_cases_9_13_20) # confirmed cases on 09/13/20, by US state 
+
+# It will be difficult to make simple graphs with the data from all countries in the world or even the US states. Use arrange_by() and slice() to get just the top 10 countries for Deaths.
+
+Top_Deaths_09_13_20 <- report_09_13_2020 %>%
+  group_by(Country_Region) %>% #data by country
+  select(Deaths, Country_Region) %>%  #look at death data by country, several entries
+  mutate(Total_Death = sum(Deaths)) %>% # combine the deaths, by their country
+  summarise(Total_Death = sum(Deaths)) %>%
+  arrange(desc(Total_Death)) %>% #most death to least
+  slice(c(1:10)) #take only the top 10
+ 
+View(Top_Deaths_09_13_20) 
+  
+
+# do the same for March 
+
+Top_Deaths_03_13_20 <- report_03_13_2020 %>%
+  group_by(Country_Region) %>% #data by country
+  select(Deaths, Country_Region) %>%  #look at death data by country, several entries
+  mutate(Total_Death = sum(Deaths)) %>% # combine the deaths, by their country
+  summarise(Total_Death = sum(Deaths)) %>%
+  arrange(desc(Total_Death)) %>% #most death to least
+  slice(c(1:10)) #take only the top 10
+ 
+View(Top_Deaths_03_13_20) 
+
+# Top cases by country 
+
+Top_Cases_09_13_20 <- report_09_13_2020 %>%
+  group_by(Country_Region) %>% #data by country
+  select(Confirmed, Country_Region) %>%  #look at cases  by country, several entries
+  mutate(Total_Cases = sum(Confirmed)) %>% # combine the cases, by their country
+  summarise(Total_Cases = sum(Confirmed)) %>%
+  arrange(desc(Total_Cases)) %>% #most cases to least
+  slice(c(1:10)) #take only the top 10
+ 
+View(Top_Cases_09_13_20) 
+
+# Same for March 
+
+Top_Cases_03_13_20 <- report_03_13_2020 %>%
+  group_by(Country_Region) %>% #data by country
+  select(Confirmed, Country_Region) %>%  #look at case data by country, several entries
+  mutate(Total_Cases = sum(Confirmed)) %>% # combine the cases, by their country
+  summarise(Total_Cases = sum(Confirmed)) %>%
+  arrange(desc(Total_Cases)) %>% #most cases to least
+  slice(c(1:10)) #take only the top 10
+ 
+View(Top_Cases_03_13_20) 
+
+# September 13, 2020 top Cases with Death 
+
+September13 <- report_09_13_2020 %>%
+  group_by(Country_Region) %>% #data by country
+  select(Confirmed, Country_Region, Deaths) %>%
+  mutate(Total_Cases = sum(Confirmed), Total_Death = sum(Deaths)) %>%
+  summarise(Total_Cases = sum(Confirmed), Total_Death = sum(Deaths)) %>%
+  arrange(desc(Total_Cases)) %>% #most cases to least
+  slice(c(1:10)) #take only the top 10
+
+View(September13)
+
+# March 13, 2020 top Cases with Death 
+March13 <- report_03_13_2020 %>%
+  group_by(Country_Region) %>% #data by country
+  select(Confirmed, Country_Region, Deaths) %>%
+  mutate(Total_Cases = sum(Confirmed), Total_Death = sum(Deaths)) %>%
+  summarise(Total_Cases = sum(Confirmed), Total_Death = sum(Deaths)) %>%
+  arrange(desc(Total_Cases)) %>% #most cases to least
+  slice(c(1:10)) #take only the top 10
+  
+View(March13)
+```
+# Intro to R graphics 
+```{r}
+# Make plots using geom_point() of the 10 countries with the confirmed cases and deaths (two separate graphs) on 3/12/2020 and 9/12/2020
+
+# 10 countries by Total Cases in March 
+March13Cases <- ggplot(data = March13,
+                      mapping = aes(x = Country_Region, y = Total_Cases))
+
+March13Cases + geom_point()
+
+# 10 Countries by Total Cases in Sept. 
+Sept13Cases <- ggplot(data = September13, 
+                     mapping = aes(x = Country_Region, y = Total_Cases))
+
+Sept13Cases + geom_point()
+
+# 10 Countries by Death 
+# in March 
+March13Death <- ggplot(data = March13,
+                      mapping = aes(x = Country_Region, y = Total_Death))
+March13Death +geom_point()
+# in Sept. 
+Sept13Death <- ggplot(data = September13,
+                      mapping = aes(x = Country_Region, y = Total_Death))
+Sept13Death +geom_point()
+
+```
+# Bar Plot 
+```{r}
+# Make using geom_bar of the 10 states with the most confirmed cases and deaths (two separate graphs) on 3/12/2020 and 9/12/2020.
+
+# by case 
+Sept13Cases + geom_bar(stat = 'identity')
+March13Cases + geom_bar(stat = 'identity')
+# by death
+Sept13Death + geom_bar(stat = 'identity')
+March13Death + geom_bar(stat = 'identity')
+```
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
+
+# References 
+

@@ -1,0 +1,67 @@
+---
+title: "Lab4a"
+author: "Margaret Hilliard"
+date: "9/14/2020"
+output: html_document
+bibliography: /Users/margarethilliard/Desktop/Evolutionary_Genomics/genomics-course/data/references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, eval = FALSE)
+```
+```{r}
+library("tidyverse")
+surveys_complete <- read_csv("data/surveys_complete.csv")
+```
+# Plotting with ggplot2 
+```{r}
+# basic template is ggplot(data = <DATA>, mapping = aes(<MAPPINGS>)) +  <GEOM_FUNCTION>()
+# use the ggplot() function and bind the plot to a specific data frame using the data argument
+ggplot(data = surveys_complete)
+# define an aesthetic mapping (using the aesthetic (aes) function), by selecting the variables to be plotted and specifying how to present them in the graph, e.g. as x/y positions or characteristics such as size, shape, color, etc.
+ggplot(data = surveys_complete, mapping = aes(x = weight, y = hindfoot_length))
+
+#    add ‘geoms’ – graphical representations of the data in the plot (points, lines, bars). ggplot2 offers many different geoms; we will use some common ones today, including:
+#        geom_point() for scatter plots, dot plots, etc.
+#        geom_boxplot() for, well, boxplots!
+#        geom_line() for trend lines, time series, etc.
+
+# To add a geom to the plot use + operator. Because we have two continuous variables, let’s use geom_point() first:
+
+ggplot(data = surveys_complete, aes(x = weight, y = hindfoot_length)) +
+  geom_point()
+
+# alternitively: 
+# Assign plot to a variable
+# surveys_plot <- ggplot(data = surveys_complete, 
+                       # mapping = aes(x = weight, y = hindfoot_length))
+# Draw the plot
+# surveys_plot + 
+#    geom_point()
+
+# Then, we start modifying this plot to extract more information from it. For instance, we can add transparency (alpha) to avoid overplotting:
+ggplot(data = surveys_complete, aes(x = weight, y = hindfoot_length)) +
+    geom_point(alpha = 0.1)
+
+# We can also add colors for all the points:
+ggplot(data = surveys_complete, mapping = aes(x = weight, y = hindfoot_length)) +
+    geom_point(alpha = 0.1, color = "blue")
+
+#Or to color each species in the plot differently, you could use a vector as an input to the argument color. ggplot2 will provide a different color corresponding to different values in the vector. Here is an example where we color with species_id:
+
+ggplot(data = surveys_complete, mapping = aes(x = weight, y = hindfoot_length)) +
+    geom_point(alpha = 0.1, aes(color = species_id))
+```
+# Challenge 1 
+```{r}
+# Use what you just learned to create a scatter plot of weight over species_id with the plot types showing in different colors. Is this a good way to show this type of data?
+
+ggplot(data = surveys_complete, mapping = aes(x = species_id, y = weight)) +
+    geom_point(aes(color = plot_type))
+
+```
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
+
+# References 
+
+
