@@ -16,6 +16,3 @@ knitr::opts_chunk$set(echo = TRUE)
 >- [Lab 2](lab2.html)
 >- [Lab 3A](Lab3A.html)
 >- [Lab 3B](Lab3B.html)
-
-# reference: 
-Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
