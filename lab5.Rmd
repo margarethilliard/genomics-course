@@ -429,7 +429,7 @@ head(US_time_series_deaths)
 
 ```
 
-# Long Format
+Long Format
 ```{r}
 library(tidyverse)
 library(dplyr)
@@ -446,7 +446,7 @@ US_time_series_deaths  %>%
 
 
 ```
-#Unite 
+Unite 
 
 ```{r}
 
