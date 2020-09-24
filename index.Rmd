@@ -10,11 +10,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ![](images/IMG_2867.jpeg)
 
-# lab reports:
-## R basics
->- [Lab 1](lab1_Hilliard.html)
->- [Lab 2](lab2.html)
->- [Lab 3A](Lab3A.html)
->- [Lab 3B](Lab3B.html)
->- [Lab 4](Lab4.html)
->- [Lab 4a](Lab4a.html)
+## lab reports
+>- [Lab 1 : Introduction to R and Reproducible Research](lab1_Hilliard.html)
+>- [Lab 2 : git, GitHub and Rstudio projects](lab2.html)
+>- [Lab 3A : Data Wrangling Part 1 - Starting with the Data](Lab3A.html)
+>- [Lab 3B : Data Wrangling Part 2 - Manipulating Data](Lab3B.html)
+>- [Lab 4 : Data wrangling and graphing COVID-19 reporting data (Part 1)](Lab4.html)
+>- [Lab 4a: Data visualization with ggplot2](Lab4a.html)
+>- [Lab 5 : Data wrangling and graphing COVID-19 reporting data (Part 2)](lab5.html)
+
+![images/IMG_2.jpeg]
