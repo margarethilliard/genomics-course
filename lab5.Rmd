@@ -7,7 +7,7 @@ bibliography: /Users/margarethilliard/Desktop/Evolutionary_Genomics/genomics-cou
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE, collapse = FALSE, eval = FALSE)
 ```
 # Joining tables
 load the tidyverse library 

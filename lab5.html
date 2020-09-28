@@ -498,8 +498,7 @@ time_series_long_joined$Date &lt;- mdy(time_series_long_joined$Date)</code></pre
 <pre class="r"><code>time_series_long_joined_counts &lt;- time_series_long_joined %&gt;% 
   pivot_longer(-c(Province_State, Country_Region, Lat, Long, Date),
                names_to = &quot;Report_Type&quot;, values_to = &quot;Counts&quot;)
-head(time_series_long_joined_counts)
-</code></pre>
+head(time_series_long_joined_counts)</code></pre>
 </div>
 <div id="making-graphs-from-the-time-series-data" class="section level1">
 <h1>Making Graphs from the time series data</h1>
@@ -557,8 +556,7 @@ Confirmed_State_6_13 &lt;- read_csv(url(&quot;https://raw.githubusercontent.com/
 Confirmed_State_9_13 &lt;- read_csv(url(&quot;https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/09-13-2020.csv&quot;)) %&gt;%
   filter (Country_Region == &quot;US&quot;) %&gt;% 
   group_by(Province_State, Country_Region) %&gt;% 
-  summarise(Confirmed = sum(Confirmed)) 
-</code></pre>
+  summarise(Confirmed = sum(Confirmed)) </code></pre>
 <p>Find out if there are differences in the countries/ provinces in each data table</p>
 <pre class="r"><code>setdiff(Confirmed_State_6_13$Province_State, Confirmed_State_9_13$Province_State)
 # no differences (all states/provinces have reported cases at these points)</code></pre>
@@ -567,8 +565,7 @@ Confirmed_State_9_13 &lt;- read_csv(url(&quot;https://raw.githubusercontent.com/
       Confirmed_State_9_13, by = c(&quot;Province_State&quot;))
 head(Confirmed_State_joined)
 tail(Confirmed_State_joined)
-# this table now has the confirmed cases for 6/13 and 9/13 by state (US only)
-</code></pre>
+# this table now has the confirmed cases for 6/13 and 9/13 by state (US only)</code></pre>
 <p>Check for NA values</p>
 <pre class="r"><code>which(is.na(Confirmed_State_joined))</code></pre>
 <p>We have columns Confirmed.x Country_Region.x, Confirmed.y Country_Region.y. So let’s rename the Confirmed columns and delete the Country_Region columns</p>
@@ -582,14 +579,12 @@ head(Confirmed_State_joined)</code></pre>
                             names_to = &quot;Date&quot;, values_to = &quot;Confirmed&quot;)
 head(Confirmed_State_joined_long)</code></pre>
 <p>Barplot 3. Add more informative x and y labels and a title to the above graph in Ex2.</p>
-<pre class="r"><code>
-ggplot(data = Confirmed_State_joined_long, aes(x = Province_State, y = (Confirmed))) +
+<pre class="r"><code>ggplot(data = Confirmed_State_joined_long, aes(x = Province_State, y = (Confirmed))) +
   geom_bar(stat = &quot;identity&quot;, aes(color = Date)) +
   theme(axis.text.x = element_text(size = 6, angle = 90)) +
   labs(title = &quot;US COIVD-19 Cases by State&quot;,
        x = &quot;State/Province&quot;, 
-       y = &quot;Confirmed Cases&quot;)
-</code></pre>
+       y = &quot;Confirmed Cases&quot;)</code></pre>
 <ol start="4" style="list-style-type: decimal">
 <li>Using the time series data. Make a plot of the total number of confirmed deaths per day worldwide</li>
 </ol>
@@ -624,8 +619,7 @@ head(time_series_long_joined)</code></pre>
 <pre class="r"><code>which(is.na(time_series_long_joined$Confirmed))</code></pre>
 <p>load lubridate lib</p>
 <pre class="r"><code>library(lubridate)
-time_series_long_joined$Date &lt;- mdy(time_series_long_joined$Date)
-</code></pre>
+time_series_long_joined$Date &lt;- mdy(time_series_long_joined$Date)</code></pre>
 <p>long format</p>
 <pre class="r"><code>time_series_long_joined_counts &lt;- time_series_long_joined %&gt;% 
   pivot_longer(-c(Province_State, Country_Region, Lat, Long, Date),
@@ -641,8 +635,7 @@ time_series_long_joined %&gt;%
     ggplot(aes(x = Date,  y = Deaths)) + 
     geom_jitter(alpha = 0.3) +
     ggtitle(&quot;Worldwide COVID-19 Deaths over time&quot;) +
-  theme(axis.text.x = element_text(size =10, angle = 0)) 
-</code></pre>
+  theme(axis.text.x = element_text(size =10, angle = 0)) </code></pre>
 <ol start="5" style="list-style-type: decimal">
 <li>Use Mutate to make a new column with deaths/confirmed cases (Hint: this might be best done after joining the tables, but before pivoting longer).</li>
 </ol>
@@ -666,8 +659,7 @@ head(DC)
   labs(title = &quot;US COVID-19 Death to Case ratio over time&quot;, 
        x = &quot;Date&quot;,
        y = &quot;Death to Case Ratio&quot;) +
-  theme(axis.text.x = element_text(size =10, angle = 0)) 
-</code></pre>
+  theme(axis.text.x = element_text(size =10, angle = 0)) </code></pre>
 <ol start="7" style="list-style-type: decimal">
 <li>Make a single graph with from the times series data with the 10 countries with the hightest death total.</li>
 </ol>
@@ -687,8 +679,7 @@ head(top_death)</code></pre>
   geom_bar(stat = &quot;identity&quot;) +
   labs(title = &quot;Countries with Highest COVID-19 Deaths&quot;,
        x = &quot;Country&quot;,
-       y = &quot;Total Death&quot;) 
-</code></pre>
+       y = &quot;Total Death&quot;) </code></pre>
 <ol start="8" style="list-style-type: decimal">
 <li>Using Facet_Wraps make a graph from the times series data with the 10 countries with the hightest death total. Format the table to look nice in the report by changing the number of rows in your graph and/or adjusting the height in the R code chunk header.</li>
 </ol>
@@ -711,8 +702,7 @@ head(top_death_timeseries)</code></pre>
   labs(title = &quot;10 Countries with Highest COVID-19 Deaths Over Time&quot;) +
   theme_minimal()
 
-# not sure why there are two trend lines in France and UK... 
-</code></pre>
+# not sure why there are two trend lines in France and UK... </code></pre>
 <ol start="9" style="list-style-type: decimal">
 <li>Using Facet_Wraps make a graph from the times series data for confirmed cases for all US states and territories. Format the table to look nice in the report by changing the number of rows in your graph and/or adjusting the height in the R code chunk header.</li>
 </ol>
@@ -728,8 +718,7 @@ head(US_time_series_confirmed)
 
 US_time_series_deaths &lt;- read_csv(url(&quot;https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv&quot;)) 
 
-head(US_time_series_deaths)
-</code></pre>
+head(US_time_series_deaths)</code></pre>
 <p>Convert to Long Format</p>
 <pre class="r"><code># Confirmed Data 
 US_time_series_confirmed_long &lt;- US_time_series_confirmed %&gt;%
@@ -762,8 +751,7 @@ head(US_Sum_State)</code></pre>
   geom_area() +
   facet_wrap(facets = vars(Province_State)) +
   ggtitle(&quot;US COVID-19 Cases by State&quot;) + 
-  theme(strip.text.x = element_text(size = 8)) 
-</code></pre>
+  theme(strip.text.x = element_text(size = 8)) </code></pre>
 <p>Application written in R <span class="citation">(R Core Team 2015)</span> using the Shiny framework <span class="citation">(Chang et al. 2015)</span>.</p>
 </div>
 <div id="references" class="section level1 unnumbered">
