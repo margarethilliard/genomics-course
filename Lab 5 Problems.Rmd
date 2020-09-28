@@ -1,0 +1,113 @@
+---
+title: "Lab 5 Problems"
+author: "Margaret Hilliard"
+date: "9/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# read in US confirmed time series data
+
+library(tidyverse)
+
+US_time_series_confirmed <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")) 
+
+head(US_time_series_confirmed)
+#View(US_time_series_confirmed)
+```
+and the US deaths time series data
+```{r}
+
+US_time_series_deaths <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")) 
+
+head(US_time_series_deaths)
+```
+Long Format
+
+```{r}
+US_time_series_confirmed_long <- US_time_series_confirmed %>%
+  pivot_longer(-c(UID, iso2,iso3, code3, FIPS, Admin2, Lat, Long_, Combined_Key, Province_State, Country_Region, Lat, Long_),
+               names_to = c("Date"), values_to = c("Confirmed"))
+
+head(US_time_series_confirmed_long)
+#View(US_time_series_confirmed_long)
+
+#?pivot_longer
+           
+US_time_series_deaths_long  <- US_time_series_deaths %>%
+  pivot_longer(-c(UID, iso2,iso3, code3, FIPS, Admin2, Lat, Long_, Combined_Key, Province_State, Country_Region, Lat, Long_, Population),
+               names_to = "Date", values_to = "Deaths") 
+
+head(US_time_series_deaths_long)
+```
+
+```{r}
+US_time_series_confirmed_long <- US_time_series_confirmed_long %>%
+  group_by(Province_State) %>%
+  select(Province_State, Date, Confirmed)
+
+head(US_time_series_confirmed_long)
+tail(US_time_series_confirmed_long)
+```
+Find cumulative sum of cases by State 
+
+```{r}
+library(dplyr)
+
+US_Sum_State <-US_time_series_confirmed_long %>%
+  group_by(Province_State, Date) %>%
+  summarise(Cases = sum(Confirmed))
+
+head(US_Sum_State)
+```
+
+Plotting cumulative sum of US covid-19 Cases by state over time 
+```{r, fig.width = 8, fig.height = 5}
+ggplot(data = US_Sum_State, aes(x = Date, y = log2(Cases), color = Province_State)) +
+  geom_jitter() +
+  facet_wrap(facets = vars(Province_State), scales = "fixed") +
+  labs(title = "US COVID-19 Cases by State")
+  
+```
+
+Which states have the most cases 
+```{r}
+
+US_cases_large <- US_time_series_confirmed_long %>%
+  group_by(Province_State) %>%
+  select(Confirmed, Province_State) %>%
+  summarise(Total_Confirmed = sum(Confirmed)) %>%
+  arrange(desc(Total_Confirmed)) %>%
+  slice(c(1:5))
+
+head(US_cases_large)
+
+```
+
+group all county data to be one date per US State 
+
+```{r, fig.width = 10, fig.height = 10}
+
+ggplot(data = US_cases, aes(x = Date, y = Confirmed, color = Province_State)) +
+  geom_area() +
+  facet_wrap(facets = vars(Province_State), scales = "fixed") + 
+  theme(axis.text.x = element_text(size = 5, angle = 0)) 
+  
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
