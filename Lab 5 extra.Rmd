@@ -6,13 +6,16 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = T)
 ```
 # Data for the lab
 Let’s start by loading libraries
 ```{r}
 library(tidyverse)
 library(lubridate)
+library(plotly)
+library(gganimate)
+library(transformr)
 ```
 Load the JHU time series data to work with below
 ```{r}
@@ -61,6 +64,7 @@ You may have realized that you can export plots in R Studio by clicking on Expor
 ```{r}
 # Plot graph to a pdf outputfile
 pdf("images/time_series_example_plot.pdf", width=6, height=3)
+
 time_series_long_joined %>% 
   group_by(Country_Region,Date) %>% 
   summarise_at(c("Confirmed", "Deaths"), sum) %>% 
@@ -69,13 +73,15 @@ time_series_long_joined %>%
     geom_point() +
     geom_line() +
     ggtitle("US COVID-19 Deaths")
+
 dev.off()
 ```
+
 ```{r}
 # Plot graph to a png outputfile
 ppi <- 300
 png("images/time_series_example_plot.png", width=6*ppi, height=6*ppi, res=ppi)
-time_series_long_joined %>% 
+US_covid_death <- time_series_long_joined %>% 
   group_by(Country_Region,Date) %>% 
   summarise_at(c("Confirmed", "Deaths"), sum) %>% 
   filter (Country_Region == "US") %>% 
@@ -83,8 +89,11 @@ time_series_long_joined %>%
     geom_point() +
     geom_line() +
     ggtitle("US COVID-19 Deaths")
-dev.off()
+
+#dev.off()
+ggsave("US-COVID-19-Deaths.png", plot = US_covid_death)
 ```
+![US COVID-19 Deaths](US-COVID-19-Deaths.png)
 # RMarkdown loading images
 
 This is the RMarkdown style for inserting images
@@ -106,9 +115,6 @@ With plotly/ggplotly (https://plot.ly/ggplot2/) you can make interactive graphs 
 
 There are two common formats used in graphing that you may come across in examples. One very common format that we have not used to date is putting your graph into a variable and then plotting the variable. They both work perfectly fine.
 ```{r}
-# Version 2
-install.packages("plotly")
-library(plotly)
 ggplotly(
   time_series_long_joined %>% 
     group_by(Country_Region,Date) %>% 
@@ -122,7 +128,6 @@ ggplotly(
 ```
 
 ```{r}
-library(plotly)
 US_deaths <- time_series_long_joined %>% 
     group_by(Country_Region,Date) %>% 
     summarise_at(c("Confirmed", "Deaths"), sum) %>% 
@@ -132,6 +137,7 @@ US_deaths <- time_series_long_joined %>%
         geom_line() +
         ggtitle("US COVID-19 Deaths")
 ggplotly(p)
+
 ```
 # Animated Graphs with gganimate
 Animated graphs when done right have a great visual impact. You can do this in R and have your animations embedded on your web page. Essentially gganimate creates a series of files that are encompassed in a gif file. In addition to having this gif as part of your report file, you can save the gif and use in a slide or other presentations. It just takes a few lines of code to covert and existing ggplot graph into an animation.
@@ -146,9 +152,6 @@ This are some important gganimate functions:
 # Creating the animations
 Below are the packages I installed. There may be others that you need, in particular to rendering gifs. Several people needed to install the packages gifski and av Some of the examples may take several minutes to create the animation.
 ```{r}
-install.packages("gganimate")
-library(gganimate)
-library(transformr)
 theme_set(theme_bw())
 ```
 An animation of the confirmed cases in select countries
@@ -171,19 +174,108 @@ animate(p, end_pause = 15)
 # Exercises
 Challenge 1: Print a graph (different from the one above) to a png file using 3*ppi for the height and width and display the png file in the report using the above R Markdown format.
 ```{r}
+# Plot graph to a png outputfile
+ppi <- 300
+#make the file 
+png(filename = "images/WorldWide_COVID-19_Death.png", width = 3*ppi, height = 3*ppi, res = ppi)
 
+worldwide_death <- time_series_long_joined %>% 
+  group_by(Date) %>% 
+  summarise_at(c("Deaths"), sum) %>% 
+    ggplot(aes(x = Date,  y = Deaths)) + 
+    geom_jitter(alpha = 0.3) +
+    ggtitle("Worldwide COVID-19 Deaths over time") +
+  theme(axis.text.x = element_text(size =10, angle = 0)) 
 
+ggsave("worldwide_death.png", plot = worldwide_death, path = "/Users/margarethilliard/Desktop/Evolutionary_Genomics/genomics-course/images", width = 9)
 
 ```
+![Global COVID-19 Deaths](images/worldwide_death.png) 
+
 Challenge 2: Turn one of the exercises from Lab 5 into an interactive graph with plotyly
 ```{r}
+# read in and subset data 
+time_series_deaths <- read_csv("data/time_series_covid19_deaths_global.csv")%>%
+  rename(Province_State = "Province/State", Country_Region = "Country/Region") %>% 
+  pivot_longer(-c(Province_State, Country_Region, Lat, Long),
+               names_to = "Date", values_to = "Deaths") %>%
+  group_by(Country_Region) %>% #data by country
+  summarise(sum_death = sum(Deaths)) %>%
+  arrange(desc(sum_death)) %>% # most death to least
+  slice(c(1:10)) # take only the top 10
+  
+# plot countries with highest deaths 
+death_plot <- ggplot(data = time_series_deaths, mapping = aes(x = Country_Region, y = sum_death)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Countries with Highest COVID-19 Deaths",
+       x = "Country",
+       y = "Total Death") 
+
+death_plot
+
 
 ```
-Challenge 3: Create an animated graph of your choosing using the time series data to display an aspect (e.g. states or countries) of the data that is important to you.
+
 ```{r}
-
+ggplotly(death_plot)
 ```
 
+Challenge 3: Create an animated graph of your choosing using the time series data to display an aspect (e.g. states or countries) of the data that is important to you.
 
+Subset only Texas cases 
+```{r}
+Texas <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))%>% 
+  pivot_longer(-c(UID, iso2,iso3, code3, FIPS, Admin2, Lat, Long_, Combined_Key, Province_State, Country_Region, Lat, Long_),
+               names_to = c("Date"), values_to = c("Confirmed")) %>%
+  filter(Province_State == c("Texas")) %>% 
+  select(Province_State, Confirmed, Date) %>%
+  group_by(Date, Province_State) %>%
+  summarise_at(c("Confirmed"), sum) 
+ 
+head(Texas)
 
+Texas$Date <- mdy(Texas$Date)
+
+ggplot(data = Texas, mapping = aes(x = Date, y = Confirmed)) +
+  geom_point(size = 1) +
+  labs(title = "COVID-19 Cases in TX", 
+       x = "Date",
+       y = "Confirmed Cases", 
+       col = "State") 
+```
+Mass cases 
+```{r}
+Mass <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))%>% 
+  pivot_longer(-c(UID, iso2,iso3, code3, FIPS, Admin2, Lat, Long_, Combined_Key, Province_State, Country_Region, Lat, Long_),
+               names_to = c("Date"), values_to = c("Confirmed")) %>%
+  filter(Province_State == c("Massachusetts")) %>% 
+  select(Province_State, Confirmed, Date) %>%
+  group_by(Date, Province_State) %>%
+  summarise_at(c("Confirmed"), sum) 
+
+Mass$Date <- mdy(Mass$Date)
+```
+Vermont cases 
+```{r}
+Vermt <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))%>% 
+  pivot_longer(-c(UID, iso2,iso3, code3, FIPS, Admin2, Lat, Long_, Combined_Key, Province_State, Country_Region, Lat, Long_),
+               names_to = c("Date"), values_to = c("Confirmed")) %>%
+  filter(Province_State == c("Vermont")) %>% 
+  select(Province_State, Confirmed, Date) %>%
+  group_by(Date, Province_State) %>%
+  summarise_at(c("Confirmed"), sum) 
+
+Vermt$Date <- mdy(Vermt$Date)
+```
+Plot over time to compare 
+```{r}
+ggplot(data = Mass, mapping = aes(x = Date, y = Confirmed)) +
+  geom_point(size = 1, aes(color = "Mass"), show.legend = TRUE) + # move "color" inside aes() to show legend
+  geom_point(data = Texas, size = 1, aes(col = "Texas"), show.legend = TRUE) +
+  geom_point(data = Vermt, size = 1, aes(col = "Vermont"), show.legend = TRUE) +
+  labs(title = "COVID-19 Cases in MA, TX, & VT", 
+       x = "Date",
+       y = "Confirmed Cases", 
+       col = "States") 
+```
 

@@ -693,9 +693,8 @@ head(top_death)</code></pre>
 # filter(Country_Region == c(&quot;Brazil&quot;, &quot;France&quot;, &quot;India&quot;, &quot;Iran&quot;, &quot;Italy&quot;, &quot;Mexico&quot;, &quot;Peru&quot;, &quot;Spain&quot;, &quot;United Kingdom&quot;, &quot;US&quot;)) 
 
 head(top_death_timeseries)</code></pre>
-<ol start="10" style="list-style-type: decimal">
-<li>Apply a theme other than the one used in the Data Carpentries tutorial to the graph in Ex8.</li>
-</ol>
+<div id="apply-a-theme-other-than-the-one-used-in-the-data-carpentries-tutorial-to-the-graph-in-ex8." class="section level3">
+<h3>10. Apply a theme other than the one used in the Data Carpentries tutorial to the graph in Ex8.</h3>
 <pre class="r"><code>ggplot(data = top_death_timeseries, aes(x = Date,  y = Deaths, color = Country_Region)) + 
   geom_jitter() +
   facet_wrap(facets = vars(Country_Region)) +
@@ -753,6 +752,7 @@ head(US_Sum_State)</code></pre>
   ggtitle(&quot;US COVID-19 Cases by State&quot;) + 
   theme(strip.text.x = element_text(size = 8)) </code></pre>
 <p>Application written in R <span class="citation">(R Core Team 2015)</span> using the Shiny framework <span class="citation">(Chang et al. 2015)</span>.</p>
+</div>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1 class="unnumbered">References</h1>
