@@ -3,14 +3,15 @@ title: "Lab 6"
 author: "Margaret Hilliard"
 date: "9/28/2020"
 output: html_document
+bibliography: /Users/margarethilliard/Desktop/Evolutionary_Genomics/genomics-course/data/references.bib
 ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 ##  Creating Country, State and County maps
 For this lab it is important to note that the time series data does not currently have entries for US States. The daily reports include US State and more recently US country/administrative units. Is possible to concatenate the daily reports to create a time series for US States, but cognizant of changes in the formats of the daily reports.
 # Building maps
-```{r}
+```{r echo = FALSE}
 library(tidyverse)
 library(maps)
 # install.packages("mapdata")
@@ -21,7 +22,7 @@ library(viridis)
 library(wesanderson)
 ```
 Here is a graph containing all the coordinate information. Note this is not summarized by country. Since there are now main points for US counties, there are many points in the US
-```{r}
+```{r echo = FALSE}
 daily_report <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/04-02-2020.csv")) %>% 
   rename(Long = "Long_") 
 
@@ -35,7 +36,7 @@ ggplot(daily_report, aes(x = Long, y = Lat, size = Confirmed/1000)) +
     coord_fixed(ratio=1.5)
 ```
 Zoom in on US 48 states. To do this Alaska, Hawaii and US Territories are filtered. Some US State entries have a Lat and Long of zero, so these are filtered as well.
-```{r}
+```{r echo = FALSE}
 daily_report <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/04-05-2020.csv")) %>% 
   rename(Long = "Long_") %>% 
   filter(Country_Region == "US") %>% 
@@ -56,7 +57,7 @@ ggplot(daily_report, aes(x = Long, y = Lat, size = Confirmed/1000)) +
     coord_fixed(ratio=1.5)
 ```
 Here is a prettier version based on an example by Anisa Dhana
-```{r}
+```{r echo = FALSE}
 mybreaks <- c(1, 100, 1000, 10000, 10000)
 ggplot(daily_report, aes(x = Long, y = Lat, size = Confirmed)) +
     borders("state", colour = "white", fill = "grey90") +
@@ -83,7 +84,7 @@ ggplot(daily_report, aes(x = Long, y = Lat, size = Confirmed)) +
 ```
 Note that in both examples the ggplot funtion borders is used to define the areas in the map
 # Mapping data to shapes
-```{r}
+```{r echo = FALSE}
 daily_report <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/04-02-2020.csv")) %>% 
   rename(Long = "Long_") %>% 
   filter(Country_Region == "US") %>% 
@@ -98,7 +99,7 @@ state_join <- left_join(us, daily_report, by = c("region" = "Province_State"))
 ```
 # Using R color palattes
 This is a bit of a digression back to Labs 3 and 4, but there are many R color palattes to choose from or you can create your own. In the above a simple gradient is used. The example from Anisa Dhana uses the viridis palatte which is designed to be perceived by viewers with common forms of colour blindness. Here is an example using a different color package - Wes Anderson. …and more <https://www.datanovia.com/en/blog/top-r-color-palettes-to-know-for-great-data-visualization/> 
-```{r}
+```{r echo = FALSE}
 # plot state map
 ggplot(data = us, mapping = aes(x = long, y = lat, group = group)) + 
   coord_fixed(1.3) + 
@@ -110,7 +111,7 @@ ggplot(data = us, mapping = aes(x = long, y = lat, group = group)) +
   labs(title = "COVID-19 Confirmed Cases in the US'")
 ```
 A look now by the counties using the RColorBrewer
-```{r}
+```{r echo = FALSE}
 library(RColorBrewer)
 # To display only colorblind-friendly brewer palettes, specify the option colorblindFriendly = TRUE as follow:
 # display.brewer.all(colorblindFriendly = TRUE)
@@ -141,7 +142,7 @@ ggplot(data = us, mapping = aes(x = long, y = lat, group = group)) +
   theme_bw() 
 ```
 If we look at just Massachusetts
-```{r}
+```{r echo = FALSE}
 daily_report <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/04-02-2020.csv")) %>% 
   rename(Long = "Long_") %>% 
   filter(Province_State == "Massachusetts") %>% 
@@ -163,7 +164,7 @@ ggplot(data = ma_county, mapping = aes(x = long, y = lat, group = group)) +
   labs(title = "COVID-19 Confirmed Cases in Massachusetts'")
 ```
 Note the cases on Nantucket and Dukes counties were reported as one value and not included on the graph. There is also an asssigned category that includes 303 Confirmed cases as of 3/31/2020.
-```{r}
+```{r echo = FALSE}
 daily_report
 ```
 # Interactive graphs
@@ -298,7 +299,7 @@ ggplot(US_report_09_26_2020, aes(x = Long, y = Lat, size = Confirmed)) +
   
   theme_void() + 
     guides( colour = guide_legend()) +
-    labs(title = "Anisa Dhana's lagout for COVID-19 Confirmed Cases in the US") +
+    labs(title = "Anisa Dhana’s graph for US COVID-19 Cases as of 9/26/2020") +
     theme(
       legend.position = "bottom",
       text = element_text(color = "#22211d"),
@@ -396,6 +397,6 @@ ggplotly(
 ```
 
 
-Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
-
 # References 
+
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015] and the COVID-19 Data Repository by the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University [@Dong2020]. 

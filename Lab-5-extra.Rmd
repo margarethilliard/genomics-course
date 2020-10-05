@@ -3,6 +3,7 @@ title: "Lab 5 extra"
 author: "Margaret Hilliard"
 date: "9/23/2020"
 output: html_document
+bibliography: /Users/margarethilliard/Desktop/Evolutionary_Genomics/genomics-course/data/references.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -193,7 +194,7 @@ ggsave("worldwide_death.png", plot = worldwide_death, path = "/Users/margarethil
 ![Global COVID-19 Deaths](images/worldwide_death.png) 
 
 Challenge 2: Turn one of the exercises from Lab 5 into an interactive graph with plotyly
-```{r}
+```{r echo = FALSE}
 # read in and subset data 
 time_series_deaths <- read_csv("data/time_series_covid19_deaths_global.csv")%>%
   rename(Province_State = "Province/State", Country_Region = "Country/Region") %>% 
@@ -216,14 +217,14 @@ death_plot
 
 ```
 
-```{r}
+```{r echo = TRUE}
 ggplotly(death_plot)
 ```
 
 Challenge 3: Create an animated graph of your choosing using the time series data to display an aspect (e.g. states or countries) of the data that is important to you.
 
 Subset only Texas cases 
-```{r}
+```{r echo=FALSE}
 Texas <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))%>% 
   pivot_longer(-c(UID, iso2,iso3, code3, FIPS, Admin2, Lat, Long_, Combined_Key, Province_State, Country_Region, Lat, Long_),
                names_to = c("Date"), values_to = c("Confirmed")) %>%
@@ -237,7 +238,7 @@ head(Texas)
 Texas$Date <- mdy(Texas$Date)
 ```
 Mass cases 
-```{r}
+```{r echo=FALSE}
 Mass <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))%>% 
   pivot_longer(-c(UID, iso2,iso3, code3, FIPS, Admin2, Lat, Long_, Combined_Key, Province_State, Country_Region, Lat, Long_),
                names_to = c("Date"), values_to = c("Confirmed")) %>%
@@ -249,7 +250,7 @@ Mass <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/
 Mass$Date <- mdy(Mass$Date)
 ```
 Vermont cases 
-```{r}
+```{r echo=FALSE}
 Vermt <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))%>% 
   pivot_longer(-c(UID, iso2,iso3, code3, FIPS, Admin2, Lat, Long_, Combined_Key, Province_State, Country_Region, Lat, Long_),
                names_to = c("Date"), values_to = c("Confirmed")) %>%
@@ -261,7 +262,7 @@ Vermt <- read_csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19
 Vermt$Date <- mdy(Vermt$Date)
 ```
 Plot over time to compare 
-```{r}
+```{r echo = TRUE}
 ggplot(data = Mass, mapping = aes(x = Date, y = Confirmed)) +
   geom_point(size = 1, aes(color = "Mass"), show.legend = TRUE) + # move "color" inside aes() to show legend
   geom_point(data = Texas, size = 1, aes(col = "Texas"), show.legend = TRUE) +
@@ -272,3 +273,6 @@ ggplot(data = Mass, mapping = aes(x = Date, y = Confirmed)) +
        col = "States") 
 ```
 
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015] and the COVID-19 Data Repository by the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University [@Dong2020]. 
+
+# References 

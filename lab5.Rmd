@@ -332,7 +332,7 @@ Plot deaths per day worldwide
 #View(time_series_long_joined)
 library(tidyverse)
 
-time_series_long_joined %>% 
+p <- time_series_long_joined %>% 
   group_by(Date) %>% 
   summarise_at(c("Deaths"), sum) %>% 
     ggplot(aes(x = Date,  y = Deaths)) + 
@@ -340,7 +340,19 @@ time_series_long_joined %>%
     ggtitle("Worldwide COVID-19 Deaths over time") +
   theme(axis.text.x = element_text(size =10, angle = 0)) 
 
+p
 ```
+save the graph as a picture file 
+```{r}
+png(filename = "WorldwideDeaths.png") 
+
+p 
+
+dev.off()
+
+```
+
+
 ### 5. Use Mutate to make a new column with deaths/confirmed cases (Hint: this might be best done after joining the tables, but before pivoting longer).
 ```{r, fig.width = 8, fig.height = 5}
 #library(tidyverse)
@@ -389,9 +401,6 @@ ggplot(data = top_death, mapping = aes(x = Country_Region, y = sum_death)) +
   labs(title = "Countries with Highest COVID-19 Deaths",
        x = "Country",
        y = "Total Death") 
-
-
-
 ```
 ### 8. Using Facet_Wraps make a graph from the times series data with the 10 countries with the hightest death total. Format the table to look nice in the report by changing the number of rows in your graph and/or adjusting the height in the R code chunk header.
 ```{r, fig.width = 8, fig.height = 5}
