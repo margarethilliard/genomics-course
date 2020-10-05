@@ -3,7 +3,7 @@ title: "Lab4"
 author: "Margaret Hilliard"
 date: "9/14/2020"
 output: html_document
-bibliography: /Users/margarethilliard/Desktop/Evolutionary_Genomics/genomics-course/data/references.bib
+bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -177,6 +177,7 @@ March13Cases + geom_bar(stat = 'identity')
 Sept13Death + geom_bar(stat = 'identity')
 March13Death + geom_bar(stat = 'identity')
 ```
+
 Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015] and the COVID-19 Data Repository by the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University [@Dong2020]. 
 
 # References 

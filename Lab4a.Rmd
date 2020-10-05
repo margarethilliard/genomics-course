@@ -337,7 +337,7 @@ w +
 
 ```
 
-Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015].
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015]. 
 
 # References 
 
