@@ -1,0 +1,18 @@
+---
+title: "lab5 test"
+author: "Margaret Hilliard"
+date: "10/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Data for the lab
+Let’s start by loading libraries
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(plotly)
+library(gganimate)
+library(transformr)
