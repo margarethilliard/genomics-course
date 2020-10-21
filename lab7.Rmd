@@ -1,0 +1,793 @@
+---
+title: "Lab7"
+author: "Margaret Hilliard"
+date: "10/12/2020"
+output: html_document
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction to a RNA-Seq differential expression workflow
+
+This lab will go through differential expression analysis in R using DESeq2 along with other Bioconductor and core R packages.
+
+The data used in this workflow is an RNA-Seq experiment of airway smooth muscle cells treated with dexamethasone, a synthetic glucocorticoid steroid with anti-inflammatory effects. Glucocorticoids are used, for example, in asthma patients to prevent or reduce inflammation of the airways. In the experiment, four primary human airway smooth muscle cell lines were treated with 1 micromolar dexamethasone for 18 hours. For each of the four cell lines, we have a treated and an untreated sample. The reference for the experiment is:
+
+Himes BE, Jiang X, Wagner P, Hu R, Wang Q, Klanderman B, Whitaker RM, Duan Q, Lasky-Su J, Nikolos C, Jester W, Johnson M, Panettieri R Jr, Tantisira KG, Weiss ST, Lu Q. “RNA-Seq Transcriptome Profiling Identifies CRISPLD2 as a Glucocorticoid Responsive Gene that Modulates Cytokine Function in Airway Smooth Muscle Cells.” PLoS One. 2014 Jun 13;9(6):e99625. PMID: 24926665. GEO: GSE52778.
+
+## Install packages and data needed to complete this tutorial on your computer
+
+```{r include=FALSE, message=FALSE, warning=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("rnaseqGene")
+
+# I also needed to install the following on my computer 
+# (You will realize this if you get an error message that the corresponding library will not load)
+
+BiocManager::install("airway")
+BiocManager::install("tximeta")
+BiocManager::install("DESeq2")
+BiocManager::install("Gviz")
+BiocManager::install("sva")
+BiocManager::install("RUVSeq")
+BiocManager::install("fission")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, results="asis"}
+library("BiocStyle")
+library("knitr")
+library("rmarkdown")
+opts_chunk$set(message = FALSE, error = FALSE, warning = FALSE,
+               cache = FALSE, fig.width = 5, fig.height = 5)
+```
+
+## Reading in data with tximeta
+
+Load the data package with the example data:
+```{r}
+library("airway")
+```
+The R function system.file can be used to find out where on your computer the files from a package have been installed. Here we ask for the full path to the extdata directory, where R packages store external data, that is part of the airway package.
+```{r}
+dir <- system.file("extdata", package="airway", mustWork=TRUE)
+```
+In this directory, we find a number of files, including eight BAM files that were used in the previous version of this workflow demonstrating alignment and counting. We will focus on the two directories that are in the quants directory, which contain the output from Salmon on two files.
+```{r}
+list.files(dir)
+list.files(file.path(dir, "quants"))
+```
+Load sample information CSV file with read.csv:
+```{r}
+csvfile <- file.path(dir, "sample_table.csv")
+coldata <- read.csv(csvfile, row.names=1, stringsAsFactors=FALSE)
+coldata
+```
+To demonstrate loading Salmon quantifiation data into R, we will just work with the two samples that are provided in the airway package. We create a column called names and a column called files:
+```{r}
+coldata <- coldata[1:2,]
+coldata$names <- coldata$Run
+coldata$files <- file.path(dir, "quants", coldata$names, "quant.sf.gz")
+file.exists(coldata$files)
+```
+Now we load the tximeta package and run its main function:
+```{r message=TRUE, warning=FALSE, error=FALSE}
+library("tximeta")
+se <- tximeta(coldata) # importing quantifications
+```
+If the reference transcriptome checksum was recognized by tximeta (details on this in the tximeta vignette), and if we have a working internet connection, tximeta will locate and download the relevant annotation data from various sources. A few details: the annotation data is only downloaded and parsed once, subsequently it will used locally cached versions of the metadata as needed (if you load data a second time that was quantified against the same reference transcripts). Also, the very first time that one uses tximeta, it will ask you to approve the default cache location (following the paradigm of the cache location used by other R and Bioconductor packages). You can change this location at any point later.
+
+We will discuss what is the structure of the se object in the next section, but we can first just consider the dimensions. Note that tximeta imports data at the transcript level.
+```{r}
+dim(se)
+head(rownames(se))
+```
+As this workflow is concerned with gene-level analysis, we will now summarize the transcript-level quantifications to the gene level (which internally makes use of the methods in tximport (Soneson, Love, and Robinson 2015)). The correct transcript-to-gene mapping table is automatically created based on the metadata stored within the se object.
+```{r}
+gse <- summarizeToGene(se)
+```
+Now we can check that the dimensions are reduced and the row IDs are now gene IDs:
+```{r}
+dim(gse)
+head(rownames(gse))
+```
+
+## Summarized Experiment
+
+```{r}
+par(mar=c(0,0,0,0))
+plot(1,1,xlim=c(0,100),ylim=c(0,100),bty="n",
+     type="n",xlab="",ylab="",xaxt="n",yaxt="n")
+polygon(c(45,90,90,45),c(5,5,70,70),col="pink",border=NA)
+polygon(c(45,90,90,45),c(68,68,70,70),col="pink3",border=NA)
+text(67.5,40,"assay(s)")
+text(67.5,35,'e.g. "counts", ...')
+polygon(c(10,40,40,10),c(5,5,70,70),col="skyblue",border=NA)
+polygon(c(10,40,40,10),c(68,68,70,70),col="skyblue3",border=NA)
+text(25,40,"rowRanges")
+polygon(c(45,90,90,45),c(75,75,95,95),col="palegreen",border=NA)
+polygon(c(45,47,47,45),c(75,75,95,95),col="palegreen3",border=NA)
+text(67.5,85,"colData")
+```
+The component parts of a SummarizedExperiment object. The assay (pink block) contains the matrix of counts, the rowRanges (blue block) contains information about the genomic ranges and the colData (green block) contains information about the samples. The highlighted line in each block represents the first row (note that the first row of colData lines up with the first column of the assay).
+
+The SummarizedExperiment container is diagrammed in the Figure above and discussed in the latest Bioconductor paper (Huber et al. 2015). In our case, tximeta has created an object gse with three matrices: “counts” - the estimated fragment counts for each gene and sample, “abundance” - the estimated transcript abundances in TPM, and “length” - the effective gene lengths which include changes in length due to biases as well as due to transcript usage. The names of the assays can be examined with assayNames, and the assays themselves are stored as assays (a list of matrices). The first matrix in the list can be pulled out via assay. The rowRanges for our object is the GRanges of the genes (from the left-most position of all the transcripts to the right-most position of all the transcripts). The component parts of the SummarizedExperiment are accessed with an R function of the same name: assay (or assays), rowRanges and colData.
+
+We now will load the full count matrix corresponding to all samples and all data, which is provided in the airway package, and will continue the analysis with the full data object. We can investigate this SummarizedExperiment object by looking at the matrices in the assays slot, the phenotypic data about the samples in colData slot, and the data about the genes in the rowRanges slot.
+
+```{r}
+data(gse)
+gse
+```
+The counts are the first matrix, so we can examine them with just assay:
+```{r}
+assayNames(gse) # Here we show the three matrices that were imported.
+head(assay(gse), 3)
+colSums(assay(gse))
+```
+The rowRanges, when printed, shows the ranges for the first five and last five genes:
+```{r}
+rowRanges(gse)
+```
+The rowRanges also contains metadata about the sequences (chromosomes in our case) in the seqinfo slot:
+```{r}
+seqinfo(rowRanges(gse))
+```
+The colData for the SummarizedExperiment reflects the data.frame that was provided to the tximeta function for importing the quantification data. Here we can see that there are columns indicating sample names, as well as the donor ID, and the treatment condition (treated with dexamethasone or untreated).
+```{r}
+colData(gse)
+```
+# The DESeqDataSet object, sample information and the design formula
+
+First, let’s examine the columns of the colData of gse. We can see each of the columns just using the $ directly on the SummarizedExperiment or DESeqDataSet.
+```{r}
+gse$donor # these are donors in gse data object (4)
+gse$condition # these are the treatments (2)
+```
+We can rename our variables if we want. Let’s use cell to denote the donor cell line, and dex to denote the treatment condition.
+```{r}
+gse$cell <- gse$donor
+gse$dex <- gse$condition
+```
+We can also change the names of the levels. It is critical when one renames levels to not change the order. Here we will rename "Untreated" as "untrt" and "Dexamethasone" as "trt":
+```{r}
+levels(gse$dex)
+# when renaming levels, the order must be preserved!
+levels(gse$dex) <- c("untrt", "trt")
+```
+The simplest design formula for differential expression would be ~ condition, where condition is a column in colData(dds) that specifies which of two (or more groups) the samples belong to. For the airway experiment, we will specify ~ cell + dex meaning that we want to test for the effect of dexamethasone (dex) controlling for the effect of different cell line (cell).
+
+Note: it is prefered in R that the first level of a factor be the reference level (e.g. control, or untreated samples). In this case, when the colData table was assembled the untreated samples were already set as the reference, but if this were not the case we could use relevel as shown below. While levels(...) <- above was simply for renaming the character strings associated with levels, relevel is a very different function, which decides how the variables will be coded, and how contrasts will be computed. For a two-group comparison, the use of relevel to change the reference level would flip the sign of a coefficient associated with a contrast between the two groups.
+```{r}
+library("magrittr")
+gse$dex %<>% relevel("untrt")
+gse$dex
+```
+%<>% is the compound assignment pipe-operator from the magrittr package, the above line of code is a concise way of saying:
+```{r}
+gse$dex <- relevel(gse$dex, "untrt")
+```
+## Starting from Summarized Experiment
+
+Again, we can quickly check the millions of fragments that could be mapped by Salmon to the genes (the second argument of round tells how many decimal points to keep).
+```{r}
+round( colSums(assay(gse)) / 1e6, 1 )
+```
+Once we have our fully annotated SummarizedExperiment object, we can construct a DESeqDataSet object from it that will then form the starting point of the analysis. We add an appropriate design for the analysis:
+```{r}
+library("DESeq2")
+```
+
+## Starting from count matrices
+
+In this section, we will show how to build an DESeqDataSet supposing we only have a count matrix and a table of sample information.
+
+Note: if you have prepared a SummarizedExperiment you should skip this section. While the previous section would be used to construct a DESeqDataSet from a SummarizedExperiment, here we first extract the individual object (count matrix and sample info) from the SummarizedExperiment in order to build it back up into a new object – only for demonstration purposes. In practice, the count matrix would either be read in from a file or perhaps generated by an R function like featureCounts from the Rsubread package (Liao, Smyth, and Shi 2014).
+
+The information in a SummarizedExperiment object can be accessed with accessor functions. For example, to see the actual data, i.e., here, the fragment counts, we use the assay function. (The head function restricts the output to the first few lines.)
+```{r}
+dds <- DESeqDataSet(gse, design = ~ cell + dex)
+```
+
+```{r}
+countdata <- round(assays(gse)[["counts"]])
+head(countdata, 3)
+```
+In this count matrix, each row represents a gene, each column a sequenced RNA library, and the values give the estimated counts of fragments that were probabilistically assigned to the respective gene in each library by Salmon. We also have information on each of the samples (the columns of the count matrix). If you’ve imported the count data in some other way, for example loading a pre-computed count matrix, it is very important to check manually that the columns of the count matrix correspond to the rows of the sample information table.
+```{r}
+coldata <- colData(gse)
+```
+We now have all the ingredients to prepare our data object in a form that is suitable for analysis, namely:
+
+    countdata: a table with the fragment counts
+    coldata: a table with information about the samples
+
+To now construct the DESeqDataSet object from the matrix of counts and the sample information table, we use:
+```{r}
+ddsMat <- DESeqDataSetFromMatrix(countData = countdata,
+                                 colData = coldata,
+                                 design = ~ cell + dex)
+```
+We will continue with the object generated from the SummarizedExperiment section.
+
+# Exploratory analysis and visualization
+
+There are two separate paths in this workflow; the one we will see first involves transformations of the counts in order to visually explore sample relationships. In the second part, we will go back to the original raw counts for statistical testing. This is critical because the statistical testing methods rely on original count data (not scaled or transformed) for calculating the precision of measurements.
+
+## Pre-filtering the dataset
+
+subset rows based on if their row sums are greater than 1
+```{r}
+nrow(dds)
+keep <- rowSums(counts(dds)) > 1
+dds <- dds[keep,]
+nrow(dds)
+```
+```{r}
+# at least 3 samples with a count of 10 or higher
+keep <- rowSums(counts(dds) >= 10) >= 3
+```
+# The variance stabilizing transformation and the rlog
+plot mean and standard deviation counts 
+```{r}
+lambda <- 10^seq(from = -1, to = 2, length = 1000)
+cts <- matrix(rpois(1000*100, lambda), ncol = 100)
+library("vsn")
+meanSdPlot(cts, ranks = FALSE)
+```
+plot the log transformed mean and standard deviation counts 
+```{r}
+log.cts.one <- log2(cts + 1)
+meanSdPlot(log.cts.one, ranks = FALSE)
+```
+variance-stabilizing transformation (VST)
+```{r}
+vsd <- vst(dds, blind = FALSE)
+head(assay(vsd), 3)
+colData(vsd)
+```
+
+```{r}
+rld <- rlog(dds, blind = FALSE)
+head(assay(rld), 3)
+```
+load the dplyr and ggplot2 libs
+```{r}
+library("dplyr")
+library("ggplot2")
+```
+
+```{r}
+dds <- estimateSizeFactors(dds)
+```
+make a plot comparing the three data transformation plots 
+```{r}
+df <- bind_rows(
+  as_data_frame(log2(counts(dds, normalized=TRUE)[, 1:2]+1)) %>%
+    mutate(transformation = "log2(x + 1)"),
+  as_data_frame(assay(vsd)[, 1:2]) %>% mutate(transformation = "vst"),
+  as_data_frame(assay(rld)[, 1:2]) %>% mutate(transformation = "rlog"))
+
+colnames(df)[1:2] <- c("x", "y")  
+
+lvls <- c("log2(x + 1)", "vst", "rlog")
+df$transformation <- factor(df$transformation, levels=lvls)
+
+ggplot(df, aes(x = x, y = y)) + geom_hex(bins = 80) +
+  coord_fixed() + facet_grid( . ~ transformation) 
+```
+
+##  Sample distances
+
+```{r}
+sampleDists <- dist(t(assay(vsd)))
+sampleDists
+```
+### Heatmaps 
+load the heatmap and color brewer libs 
+```{r}
+library("pheatmap")
+library("RColorBrewer")
+```
+plot the heatmap based on distances 
+```{r fig.width = 6.1, fig.height = 4.5}
+sampleDistMatrix <- as.matrix( sampleDists ) # distances to matrix 
+rownames(sampleDistMatrix) <- paste( vsd$dex, vsd$cell, sep = " - " ) 
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         col = colors)
+```
+load PCA lib
+```{r}
+library("PoiClaClu")
+poisd <- PoissonDistance(t(counts(dds)))
+```
+plot the heatmap based on positions 
+```{r fig.width = 6.1, fig.height = 4.5}
+samplePoisDistMatrix <- as.matrix( poisd$dd )
+rownames(samplePoisDistMatrix) <- paste( dds$dex, dds$cell, sep=" - " )
+colnames(samplePoisDistMatrix) <- NULL
+pheatmap(samplePoisDistMatrix,
+         clustering_distance_rows = poisd$dd,
+         clustering_distance_cols = poisd$dd,
+         col = colors)
+```
+## PCA Plot
+plot PCA 
+```{r fig.width=6, fig.height=4.5}
+plotPCA(vsd, intgroup = c("dex", "cell"))
+```
+
+```{r}
+pcaData <- plotPCA(vsd, intgroup = c( "dex", "cell"), returnData = TRUE)
+pcaData
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+```
+plot PCA with VST data 
+```{r}
+ggplot(pcaData, aes(x = PC1, y = PC2, color = dex, shape = cell)) +
+  geom_point(size =3) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  coord_fixed() +
+  ggtitle("PCA with VST data")
+```
+
+## PCA plot using Generalized PCA
+
+```{r}
+library("glmpca")
+gpca <- glmpca(counts(dds), L=2)
+gpca.dat <- gpca$factors
+gpca.dat$dex <- dds$dex
+gpca.dat$cell <- dds$cell
+```
+plot generalized PCA 
+```{r fig.width=6, fig.height=4.5}
+ggplot(gpca.dat, aes(x = dim1, y = dim2, color = dex, shape = cell)) +
+  geom_point(size =3) + coord_fixed() + ggtitle("glmpca - Generalized PCA")
+```
+
+## MDS plot
+
+plot multidimentionaly scaling (MDS) with VST data 
+```{r fig.width=6, fig.height=4.5}
+mds <- as.data.frame(colData(vsd))  %>%
+  cbind(cmdscale(sampleDistMatrix))
+ggplot(mds, aes(x = `1`, y = `2`, color = dex, shape = cell)) +
+  geom_point(size = 3) + coord_fixed() + ggtitle("MDS with VST data")
+```
+Plot MDS with Poisson Distances
+```{r fig.width=6, fig.height=4.5}
+mdsPois <- as.data.frame(colData(dds)) %>%
+  cbind(cmdscale(samplePoisDistMatrix))
+ggplot(mdsPois, aes(x = `1`, y = `2`, color = dex, shape = cell)) +
+  geom_point(size = 3) + coord_fixed() + ggtitle("MDS with PoissonDistances")
+```
+
+# Differential expression analysis
+
+##  Running the differential expression pipeline
+
+As we have already specified an experimental design when we created the DESeqDataSet, we can run the differential expression pipeline on the raw counts with a single call to the function DESeq:
+```{r}
+dds <- DESeq(dds)
+```
+
+## Building the results table
+
+Calling results without any arguments will extract the estimated log2 fold changes and p values for the last variable in the design formula. If there are more than 2 levels for this variable, results will extract the results table for a comparison of the last level over the first level. The comparison is printed at the top of the output: dex trt vs untrt.
+```{r}
+res <- results(dds)
+res
+```
+We could have equivalently produced this results table with the following more specific command. Because dex is the last variable in the design, we could optionally leave off the contrast argument to extract the comparison of the two levels of dex.
+```{r}
+res <- results(dds, contrast=c("dex","trt","untrt"))
+```
+As res is a DataFrame object, it carries metadata with information on the meaning of the columns:
+```{r}
+mcols(res, use.names = TRUE)
+```
+The first column, baseMean, is a just the average of the normalized count values, divided by the size factors, taken over all samples in the DESeqDataSet. The remaining four columns refer to a specific contrast, namely the comparison of the trt level over the untrt level for the factor variable dex. We will find out below how to obtain other contrasts.
+
+The column log2FoldChange is the effect size estimate. It tells us how much the gene’s expression seems to have changed due to treatment with dexamethasone in comparison to untreated samples. This value is reported on a logarithmic scale to base 2: for example, a log2 fold change of 1.5 means that the gene’s expression is increased by a multiplicative factor of 21.5≈2.82
+
+Of course, this estimate has an uncertainty associated with it, which is available in the column lfcSE, the standard error estimate for the log2 fold change estimate. We can also express the uncertainty of a particular effect size estimate as the result of a statistical test. The purpose of a test for differential expression is to test whether the data provides sufficient evidence to conclude that this value is really different from zero. DESeq2 performs for each gene a hypothesis test to see whether evidence is sufficient to decide against the null hypothesis that there is zero effect of the treatment on the gene and that the observed difference between treatment and control was merely caused by experimental variability (i.e., the type of variability that you can expect between different samples in the same treatment group). As usual in statistics, the result of this test is reported as a p value, and it is found in the column pvalue. Remember that a p value indicates the probability that a fold change as strong as the observed one, or even stronger, would be seen under the situation described by the null hypothesis.
+
+We can also summarize the results with the following line of code, which reports some additional information, that will be covered in later sections.
+```{r}
+summary(res)
+```
+Note that there are many genes with differential expression due to dexamethasone treatment at the FDR level of 10%. This makes sense, as the smooth muscle cells of the airway are known to react to glucocorticoid steroids. However, there are two ways to be more strict about which set of genes are considered significant:
+
+    lower the false discovery rate threshold (the threshold on padj in the results table)
+    raise the log2 fold change threshold from 0 using the lfcThreshold argument of results
+
+If we lower the false discovery rate threshold, we should also inform the results() function about it, so that the function can use this threshold for the optimal independent filtering that it performs:
+```{r}
+res.05 <- results(dds, alpha = 0.05)
+table(res.05$padj < 0.05)
+```
+If we want to raise the log2 fold change threshold, so that we test for genes that show more substantial changes due to treatment, we simply supply a value on the log2 scale. For example, by specifying lfcThreshold = 1, we test for genes that show significant effects of treatment on gene counts more than doubling or less than halving, because 21=2.
+```{r}
+resLFC1 <- results(dds, lfcThreshold=1)
+table(resLFC1$padj < 0.1)
+```
+If we want to raise the log2 fold change threshold, so that we test for genes that show more substantial changes due to treatment, we simply supply a value on the log2 scale. For example, by specifying lfcThreshold = 1, we test for genes that show significant effects of treatment on gene counts more than doubling or less than halving, because 21=2.
+
+##  Other comparisons
+
+In general, the results for a comparison of any two levels of a variable can be extracted using the contrast argument to results. The user should specify three values: the name of the variable, the name of the level for the numerator, and the name of the level for the denominator. Here we extract results for the log2 of the fold change of one cell line over another:
+```{r}
+results(dds, contrast = c("cell", "N061011", "N61311"))
+```
+There are additional ways to build results tables for certain comparisons after running DESeq once. If results for an interaction term are desired, the name argument of results should be used. Please see the help page for the results function for details on the additional ways to build results tables. In particular, the Examples section of the help page for results gives some pertinent examples.
+
+## Multiple testing
+
+In high-throughput biology, we are careful to not use the p values directly as evidence against the null, but to correct for multiple testing. What would happen if we were to simply threshold the p values at a low value, say 0.05? There are 5170 genes with a p value below 0.05 among the 31604 genes for which the test succeeded in reporting a p value:
+```{r}
+sum(res$pvalue < 0.05, na.rm=TRUE)
+sum(!is.na(res$pvalue))
+```
+Now, assume for a moment that the null hypothesis is true for all genes, i.e., no gene is affected by the treatment with dexamethasone. Then, by the definition of the p value, we expect up to 5% of the genes to have a p value below 0.05. This amounts to 1580 genes. If we just considered the list of genes with a p value below 0.05 as differentially expressed, this list should therefore be expected to contain up to 1580 / 5170 = 31% false positives.
+
+DESeq2 uses the Benjamini-Hochberg (BH) adjustment (Benjamini and Hochberg 1995) as implemented in the base R p.adjust function; in brief, this method calculates for each gene an adjusted p value that answers the following question: if one called significant all genes with an adjusted p value less than or equal to this gene’s adjusted p value threshold, what would be the fraction of false positives (the false discovery rate, FDR) among them, in the sense of the calculation outlined above? These values, called the BH-adjusted p values, are given in the column padj of the res object.
+
+The FDR is a useful statistic for many high-throughput experiments, as we are often interested in reporting or focusing on a set of interesting genes, and we would like to put an upper bound on the percent of false positives in this set.
+
+Hence, if we consider a fraction of 10% false positives acceptable, we can consider all genes with an adjusted p value below 10% = 0.1 as significant. How many such genes are there?
+```{r}
+sum(res$padj < 0.1, na.rm=TRUE)
+```
+We subset the results table to these genes and then sort it by the log2 fold change estimate to get the significant genes with the strongest down-regulation:
+```{r}
+resSig <- subset(res, padj < 0.1)
+head(resSig[ order(resSig$log2FoldChange), ])
+```
+…and with the strongest up-regulation:
+```{r}
+head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
+```
+
+#  Plotting results
+
+##  Counts plot
+
+A quick way to visualize the counts for a particular gene is to use the plotCounts function that takes as arguments the DESeqDataSet, a gene name, and the group over which to plot the counts (figure below).
+```{r}
+topGene <- rownames(res)[which.min(res$padj)]
+plotCounts(dds, gene = topGene, intgroup=c("dex"))
+```
+We can also make custom plots using the ggplot function from the ggplot2 package (figures below).
+```{r fig.width = 4, fig.height = 3}
+library("ggbeeswarm")
+geneCounts <- plotCounts(dds, gene = topGene, intgroup = c("dex","cell"),
+                         returnData = TRUE)
+ggplot(geneCounts, aes(x = dex, y = count, color = cell)) +
+  scale_y_log10() +  geom_beeswarm(cex = 3)
+```
+
+```{r fig.width = 4, fig.height = 3}
+ggplot(geneCounts, aes(x = dex, y = count, color = cell, group = cell)) +
+  scale_y_log10() + geom_point(size = 3) + geom_line()
+```
+Normalized counts with lines connecting cell lines. Note that the DESeq test actually takes into account the cell line effect, so this figure more closely depicts the difference being tested.
+
+##  MA-plot
+
+An MA-plot (Dudoit et al. 2002) provides a useful overview for the distribution of the estimated coefficients in the model, e.g. the comparisons of interest, across all genes. On the y-axis, the “M” stands for “minus” – subtraction of log values is equivalent to the log of the ratio – and on the x-axis, the “A” stands for “average”. You may hear this plot also referred to as a mean-difference plot, or a Bland-Altman plot.
+
+Before making the MA-plot, we use the lfcShrink function to shrink the log2 fold changes for the comparison of dex treated vs untreated samples. There are three types of shrinkage estimators in DESeq2, which are covered in the DESeq2 vignette. Here we specify the apeglm method for shrinking coefficients, which is good for shrinking the noisy LFC estimates while giving low bias LFC estimates for true large differences (Zhu, Ibrahim, and Love 2018). To use apeglm we specify a coefficient from the model to shrink, either by name or number as the coefficient appears in resultsNames(dds).
+```{r}
+library("apeglm")
+resultsNames(dds)
+res <- lfcShrink(dds, coef="dex_trt_vs_untrt", type="apeglm")
+plotMA(res, ylim = c(-5, 5))
+```
+If it is necessary to specify a contrast not represented in resultsNames(dds), either of the other two shrinkage methods can be used, or in some cases, re-factoring the relevant variables and running nbinomWaldTest followed by lfcShrink is sufficient. See the DESeq2 vignette for more details.
+
+An MA-plot of changes induced by treatment. The log2 fold change for a particular comparison is plotted on the y-axis and the average of the counts normalized by size factor is shown on the x-axis. Each gene is represented with a dot. Genes with an adjusted p value below a threshold (here 0.1, the default) are shown in red.
+
+The DESeq2 package uses a Bayesian procedure to moderate (or “shrink”) log2 fold changes from genes with very low counts and highly variable counts, as can be seen by the narrowing of the vertical spread of points on the left side of the MA-plot. As shown above, the lfcShrink function performs this operation. For a detailed explanation of the rationale of moderated fold changes, please see the DESeq2 paper (Love, Huber, and Anders 2014).
+
+If we had not used statistical moderation to shrink the noisy log2 fold changes, we would have instead seen the following plot:
+```{r}
+res.noshr <- results(dds, name="dex_trt_vs_untrt")
+plotMA(res.noshr, ylim = c(-5, 5))
+```
+We can label individual points on the MA-plot as well. Here we use the with R function to plot a circle and text for a selected row of the results object. Within the with function, only the baseMean and log2FoldChange values for the selected rows of res are used.
+```{r}
+plotMA(res, ylim = c(-5,5))
+topGene <- rownames(res)[which.min(res$padj)]
+with(res[topGene, ], {
+  points(baseMean, log2FoldChange, col="dodgerblue", cex=2, lwd=2)
+  text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
+})
+```
+Another useful diagnostic plot is the histogram of the p values (figure below). This plot is best formed by excluding genes with very small counts, which otherwise generate spikes in the histogram.
+```{r}
+hist(res$pvalue[res$baseMean > 1], breaks = 0:20/20,
+     col = "grey50", border = "white")
+```
+
+## Gene clustering
+
+In the sample distance heatmap made previously, the dendrogram at the side shows us a hierarchical clustering of the samples. Such a clustering can also be performed for the genes. Since the clustering is only relevant for genes that actually carry a signal, one usually would only cluster a subset of the most highly variable genes. Here, for demonstration, let us select the 20 genes with the highest variance across samples. We will work with the VST data.
+```{r}
+library("genefilter")
+topVarGenes <- head(order(rowVars(assay(vsd)), decreasing = TRUE), 20)
+```
+The heatmap becomes more interesting if we do not look at absolute expression strength but rather at the amount by which each gene deviates in a specific sample from the gene’s average across all samples. Hence, we center each genes’ values across samples, and plot a heatmap (figure below). We provide a data.frame that instructs the pheatmap function how to label the columns.
+```{r}
+mat  <- assay(vsd)[ topVarGenes, ]
+mat  <- mat - rowMeans(mat)
+anno <- as.data.frame(colData(vsd)[, c("cell","dex")]) 
+pheatmap(mat, annotation_col = anno)
+```
+Heatmap of relative VST-transformed values across samples. Treatment status and cell line information are shown with colored bars at the top of the heatmap. Blocks of genes that covary across patients. Note that a set of genes in the heatmap are separating the N061011 cell line from the others, and there is another set of genes for which the dexamethasone treated samples have higher gene expression.
+
+##  Independent filtering
+
+The MA plot highlights an important property of RNA-seq data. For weakly expressed genes, we have no chance of seeing differential expression, because the low read counts suffer from such high Poisson noise that any biological effect is drowned in the uncertainties from the sampling at a low rate. We can also show this by examining the ratio of small p values (say, less than 0.05) for genes binned by mean normalized count. We will use the results table subjected to the threshold to show what this looks like in a case when there are few tests with small p value.
+
+In the following code chunk, we create bins using the quantile function, bin the genes by base mean using cut, rename the levels of the bins using the middle point, calculate the ratio of p values less than 0.05 for each bin, and finally plot these ratios (figure below).
+```{r fig.width=6}
+qs <- c(0, quantile(resLFC1$baseMean[resLFC1$baseMean > 0], 0:6/6))
+bins <- cut(resLFC1$baseMean, qs)
+levels(bins) <- paste0("~", round(signif((qs[-1] + qs[-length(qs)])/2, 2)))
+fractionSig <- tapply(resLFC1$pvalue, bins, function(p)
+  mean(p < .05, na.rm = TRUE))
+barplot(fractionSig, xlab = "mean normalized count",
+        ylab = "fraction of small p values")
+```
+```{r eval=FALSE}
+#  library("IHW")
+#  res.ihw <- results(dds, filterFun=ihw)
+```
+The ratio of small p values for genes binned by mean normalized count. The p values are from a test of log2 fold change greater than 1 or less than -1. This plot demonstrates that genes with very low mean count have little or no power, and are best excluded from testing.
+
+At first sight, there may seem to be little benefit in filtering out these genes. After all, the test found them to be non-significant anyway. However, these genes have an influence on the multiple testing adjustment, whose performance improves if such genes are removed. By removing the low count genes from the input to the FDR procedure, we can find more genes to be significant among those that we keep, and so improved the power of our test. This approach is known as independent filtering.
+
+The DESeq2 software automatically performs independent filtering that maximizes the number of genes with adjusted p value less than a critical value (by default, alpha is set to 0.1). This automatic independent filtering is performed by, and can be controlled by, the results function.
+
+The term independent highlights an important caveat. Such filtering is permissible only if the statistic that we filter on (here the mean of normalized counts across all samples) is independent of the actual test statistic (the p value) under the null hypothesis. Otherwise, the filtering would invalidate the test and consequently the assumptions of the BH procedure. The independent filtering software used inside DESeq2 comes from the genefilter package, that contains a reference to a paper describing the statistical foundation for independent filtering (Bourgon, Gentleman, and Huber 2010).
+
+##  Independent Hypothesis Weighting
+
+A generalization of the idea of p value filtering is to weight hypotheses to optimize power. A Bioconductor package, IHW is available that implements the method of Independent Hypothesis Weighting (Ignatiadis et al. 2016). See the DESeq2 package vignette for an example of using IHW in combination with DESeq2. In particular, the following (here, un-evaluated) code chunk can be used to perform IHW in lieu of independent filtering described above.
+
+# Annotating and exporting results
+
+Our result table so far only contains the Ensembl gene IDs, but alternative gene names may be more informative for interpretation. Bioconductor’s annotation packages help with mapping various ID schemes to each other. We load the AnnotationDbi package and the annotation package org.Hs.eg.db:
+```{r}
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+```
+This is the organism annotation package (“org”) for Homo sapiens (“Hs”), organized as an AnnotationDbi database package (“db”), using Entrez Gene IDs (“eg”) as primary key. To get a list of all available key types, use:
+```{r}
+columns(org.Hs.eg.db)
+```
+We can use the mapIds function to add individual columns to our results table. We provide the row names of our results table as a key, and specify that keytype=ENSEMBL. The column argument tells the mapIds function which information we want, and the multiVals argument tells the function what to do if there are multiple possible values for a single input value. Here we ask to just give us back the first one that occurs in the database. To add the gene symbol and Entrez ID, we call mapIds twice.
+```{r}
+ens.str <- substr(rownames(res), 1, 15)
+res$symbol <- mapIds(org.Hs.eg.db,
+                     keys=ens.str,
+                     column="SYMBOL",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+res$entrez <- mapIds(org.Hs.eg.db,
+                     keys=ens.str,
+                     column="ENTREZID",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+```
+Now the results have the desired external gene IDs:
+```{r}
+resOrdered <- res[order(res$pvalue),]
+head(resOrdered)
+```
+
+## Exporting results
+
+```{r eval=FALSE}
+#  resOrderedDF <- as.data.frame(resOrdered)[1:100, ]
+#  write.csv(resOrderedDF, file = "results.csv")
+```
+
+```{r eval=FALS}
+#  library("ReportingTools")
+#  htmlRep <- HTMLReport(shortName="report", title="My report",
+#                        reportDirectory="./report")
+#  publish(resOrderedDF, htmlRep)
+#  url <- finish(htmlRep)
+#  browseURL(url)
+```
+
+##  Plotting fold changes in genomic space
+
+If we have used the tximeta function to read in the quantification data, then our DESeqDataSet object is built on top of ready-to-use Bioconductor objects specifying the genomic coordinates of the genes. We can therefore easily plot our differential expression results in genomic space. While the results or lfcShrink functions by default return a DataFrame, using the format argument, we can ask for GRanges or GRangesList output (the latter is only possible if we use the addExons function from the tximeta package upstream of creating a DESeqDataSet).
+```{r}
+resGR <- lfcShrink(dds, coef="dex_trt_vs_untrt", type="apeglm", format="GRanges")
+resGR
+```
+We need to add the symbol again for labeling the genes on the plot:
+```{r}
+ens.str <- substr(names(resGR), 1, 15)
+resGR$symbol <- mapIds(org.Hs.eg.db, ens.str, "SYMBOL", "ENSEMBL")
+```
+We will use the Gviz package for plotting the GRanges and associated metadata: the log fold changes due to dexamethasone treatment.
+```{r}
+library("Gviz")
+```
+The following code chunk specifies a window of 1 million base pairs upstream and downstream from the gene with the smallest p value. We create a subset of our full results, for genes within the window. We add the gene symbol as a name if the symbol exists and is not duplicated in our subset.
+```{r}
+window <- resGR[topGene] + 1e6
+strand(window) <- "*"
+resGRsub <- resGR[resGR %over% window]
+naOrDup <- is.na(resGRsub$symbol) | duplicated(resGRsub$symbol)
+resGRsub$group <- ifelse(naOrDup, names(resGRsub), resGRsub$symbol)
+```
+We create a vector specifying if the genes in this subset had a low value of padj.
+```{r}
+status <- factor(ifelse(resGRsub$padj < 0.05 & !is.na(resGRsub$padj),
+                        "sig", "notsig"))
+```
+We can then plot the results using Gviz functions (figure below). We create an axis track specifying our location in the genome, a track that will show the genes and their names, colored by significance, and a data track that will draw vertical bars showing the moderated log fold change produced by DESeq2, which we know are only large when the effect is well supported by the information in the counts.
+```{r}
+options(ucscChromosomeNames = FALSE)
+g <- GenomeAxisTrack()
+a <- AnnotationTrack(resGRsub, name = "gene ranges", feature = status)
+d <- DataTrack(resGRsub, data = "log2FoldChange", baseline = 0,
+               type = "h", name = "log2 fold change", strand = "+")
+plotTracks(list(g, d, a), groupAnnotation = "group",
+           notsig = "grey", sig = "hotpink") # color coded by significance 
+```
+log2 fold changes in genomic region surrounding the gene with smallest adjusted p value. Genes highlighted in pink have adjusted p value less than 0.1.
+
+# Removing hidden batch effects
+
+Suppose we did not know that there were different cell lines involved in the experiment, only that there was treatment with dexamethasone. The cell line effect on the counts then would represent some hidden and unwanted variation that might be affecting many or all of the genes in the dataset. We can use statistical methods designed for RNA-seq from the sva package (Leek 2014) or the RUVSeq package (Risso et al. 2014) in Bioconductor to detect such groupings of the samples, and then we can add these to the DESeqDataSet design, in order to account for them.
+
+The SVA package uses the term surrogate variables for the estimated variables that we want to account for in our analysis, while the RUV package uses the terms factors of unwanted variation with the acronym “Remove Unwanted Variation” explaining the package title. We first use SVA to find hidden batch effects and then RUV following.
+
+##  Using SVA with DESeq2
+
+```{r}
+library("sva")
+```
+Below we obtain a matrix of normalized counts for which the average count across samples is larger than 1. As we described above, we are trying to recover any hidden batch effects, supposing that we do not know the cell line information. So we use a full model matrix with the dex variable, and a reduced, or null, model matrix with only an intercept term. Finally we specify that we want to estimate 2 surrogate variables. For more information read the manual page for the svaseq function by typing ?svaseq.
+```{r}
+dat  <- counts(dds, normalized = TRUE)
+idx  <- rowMeans(dat) > 1
+dat  <- dat[idx, ]
+mod  <- model.matrix(~ dex, colData(dds))
+mod0 <- model.matrix(~   1, colData(dds))
+svseq <- svaseq(dat, mod, mod0, n.sv = 2)
+svseq$sv
+```
+Because we actually do know the cell lines, we can see how well the SVA method did at recovering these variables (figure below).
+```{r}
+par(mfrow = c(2, 1), mar = c(3,5,3,1))
+for (i in 1:2) {
+  stripchart(svseq$sv[, i] ~ dds$cell, vertical = TRUE, main = paste0("SV", i))
+  abline(h = 0)
+}
+```
+Surrogate variables 1 and 2 plotted over cell line. Here, we know the hidden source of variation (cell line), and therefore can see how the SVA procedure is able to identify a source of variation which is correlated with cell line.
+
+Finally, in order to use SVA to remove any effect on the counts from our surrogate variables, we simply add these two surrogate variables as columns to the DESeqDataSet and then add them to the design:
+```{r}
+ddssva <- dds
+ddssva$SV1 <- svseq$sv[,1]
+ddssva$SV2 <- svseq$sv[,2]
+design(ddssva) <- ~ SV1 + SV2 + dex
+```
+We could then produce results controlling for surrogate variables by running DESeq with the new design.
+
+##  Using RUV with DESeq2
+
+We can also use the RUV method in the RUVSeq package to detect the hidden batch effects.
+```{r}
+library("RUVSeq")
+```
+We can use the RUVg function to estimate factors of unwanted variation, analogous to SVA’s surrogate variables. A difference compared to the SVA procedure above, is that we first would run DESeq and results to obtain the p-values for the analysis without knowing about the batches, e.g. just ~ dex. Supposing that we have this results table res, we then pull out a set of empirical control genes by looking at the genes that do not have a small p-value.
+```{r}
+set <- newSeqExpressionSet(counts(dds))
+idx  <- rowSums(counts(set) > 5) >= 2
+set  <- set[idx, ]
+set <- betweenLaneNormalization(set, which="upper")
+not.sig <- rownames(res)[which(res$pvalue > .1)]
+empirical <- rownames(set)[ rownames(set) %in% not.sig ]
+set <- RUVg(set, empirical, k=2)
+pData(set)
+```
+We can plot the factors estimated by RUV:
+```{r}
+par(mfrow = c(2, 1), mar = c(3,5,3,1))
+for (i in 1:2) {
+  stripchart(pData(set)[, i] ~ dds$cell, vertical = TRUE, main = paste0("W", i))
+  abline(h = 0)
+}
+```
+Factors of unwanted variation plotted over cell line.
+
+As before, if we wanted to control for these factors, we simply add them to the DESeqDataSet and to the design:
+```{r}
+ddsruv <- dds
+ddsruv$W1 <- set$W_1
+ddsruv$W2 <- set$W_2
+design(ddsruv) <- ~ W1 + W2 + dex
+```
+We would then run DESeq with the new design to re-estimate the parameters and results.
+
+# Time course experiments
+
+DESeq2 can be used to analyze time course experiments, for example to find those genes that react in a condition-specific manner over time, compared to a set of baseline samples. Here we demonstrate a basic time course analysis with the fission data package, which contains gene counts for an RNA-seq time course of fission yeast (Leong et al. 2014). The yeast were exposed to oxidative stress, and half of the samples contained a deletion of the gene atf21. We use a design formula that models the strain difference at time 0, the difference over time, and any strain-specific differences over time (the interaction term strain:minute).
+```{r}
+library("fission")
+data("fission")
+ddsTC <- DESeqDataSet(fission, ~ strain + minute + strain:minute)
+```
+The following chunk of code performs a likelihood ratio test, where we remove the strain-specific differences over time. Genes with small p values from this test are those which at one or more time points after time 0 showed a strain-specific effect. Note therefore that this will not give small p values to genes that moved up or down over time in the same way in both strains.
+```{r}
+ddsTC <- DESeq(ddsTC, test="LRT", reduced = ~ strain + minute)
+resTC <- results(ddsTC)
+resTC$symbol <- mcols(ddsTC)$symbol
+head(resTC[order(resTC$padj),], 4)
+```
+This is just one of the tests that can be applied to time series data. Another option would be to model the counts as a smooth function of time, and to include an interaction term of the condition with the smooth function. It is possible to build such a model using spline basis functions within R, and another, more modern approach is using Gaussian processes (Tonner et al. 2017).
+
+We can plot the counts for the groups over time using ggplot2, for the gene with the smallest adjusted p value, testing for condition-dependent time profile and accounting for differences at time 0 (figure below). Keep in mind that the interaction terms are the difference between the two groups at a given time after accounting for the difference at time 0.
+```{r fig.width=6, fig.height=4.5}
+fiss <- plotCounts(ddsTC, which.min(resTC$padj), 
+                   intgroup = c("minute","strain"), returnData = TRUE)
+fiss$minute <- as.numeric(as.character(fiss$minute))
+ggplot(fiss,
+       aes(x = minute, y = count, color = strain, group = strain)) + 
+  geom_point() + stat_summary(fun.y=mean, geom="line") +
+  scale_y_log10()
+```
+Normalized counts for a gene with condition-specific changes over time.
+
+Wald tests for the log2 fold changes at individual time points can be investigated using the test argument to results:
+```{r}
+resultsNames(ddsTC)
+res30 <- results(ddsTC, name="strainmut.minute30", test="Wald")
+res30[which.min(resTC$padj),]
+```
+We can furthermore cluster significant genes by their profiles. We extract a matrix of the shrunken log2 fold changes using the coef function:
+```{r}
+betas <- coef(ddsTC)
+colnames(betas)
+```
+We can now plot the log2 fold changes in a heatmap (figure below).
+```{r}
+topGenes <- head(order(resTC$padj),20)
+mat <- betas[topGenes, -c(1,2)]
+thr <- 3 
+mat[mat < -thr] <- -thr
+mat[mat > thr] <- thr
+pheatmap(mat, breaks=seq(from=-thr, to=thr, length=101),
+         cluster_col=FALSE)
+```
+Heatmap of log2 fold changes for genes with smallest adjusted p value. The bottom set of genes show strong induction of expression for the baseline samples in minutes 15-60 (red boxes in the bottom left corner), but then have slight differences for the mutant strain (shown in the boxes in the bottom right corner).
+
+#  Session information
+
+As the last part of this document, we call the function sessionInfo, which reports the version numbers of R and all the packages used in this session. It is good practice to always keep such a record of this as it will help to track down what has happened in case an R script ceases to work or gives different results because the functions have been changed in a newer version of one of your packages. By including it at the bottom of a script, your reports will become more reproducible.
+
+The session information should also always be included in any emails to the Bioconductor support site along with all code used in the analysis.
+```{r}
+sessionInfo()
+```
+
+# References 

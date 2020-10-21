@@ -165,7 +165,7 @@ head(time_series_long_joined_counts)
 ```
 # Making Graphs from the time series data
 To make a times series graph of the confirmed cases we need to summarize the Country date to count up the individual state data for the US.
-```{r}
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 time_series_long_joined %>% 
   group_by(Country_Region,Date) %>% 
   summarise_at(c("Confirmed", "Deaths"), sum) %>% 
@@ -176,7 +176,7 @@ time_series_long_joined %>%
     ggtitle("US COVID-19 Deaths")
 ```
 Let’s look at the US data in the context of a few other countries
-```{r}
+```{r echo = FALSE, message=FALSE, warning=FALSE}
 time_series_long_joined %>% 
   group_by(Country_Region,Date) %>% 
   summarise_at(c("Confirmed", "Deaths"), sum) %>% 
@@ -190,7 +190,7 @@ time_series_long_joined %>%
 ```
 
 Now several countries on the same graph
-```{r}
+```{r echo = FALSE, message=FALSE, warning=FALSE}
 time_series_long_joined %>% 
     group_by(Country_Region,Date) %>% 
     summarise_at(c("Confirmed", "Deaths"), sum) %>% 
@@ -202,7 +202,7 @@ time_series_long_joined %>%
     ggtitle("COVID-19 Deaths")
 ```
 We can use the alternative data frame with column Report_Type to show Confirmed and Deaths. Because the counts for Deaths are low relative to Confirmed a log scale works best here for seeing the pattern
-```{r}
+```{r echo = FALSE, message=FALSE, warning=FALSE}
 time_series_long_joined_counts %>% 
   group_by(Country_Region, Report_Type, Date) %>% 
   summarise(Counts = sum(Counts)) %>% 
@@ -269,7 +269,7 @@ head(Confirmed_State_joined_long)
 
 ### 3. Add more informative x and y labels and a title to the above graph in Ex2.
 
-```{r, fig.width = 5, fig.height = 3}
+```{r echo = FALSE, message=FALSE, warning=FALSE, fig.width = 5, fig.height = 3}
 
 ggplot(data = Confirmed_State_joined_long, aes(x = Province_State, y = (Confirmed))) +
   geom_bar(stat = "identity", aes(color = Date)) +
@@ -337,7 +337,7 @@ time_series_long_joined_counts <- time_series_long_joined %>%
 head(time_series_long_joined_counts)
 ```
 Plot deaths per day worldwide 
-```{r, fig.width = 8, fig.height = 5}
+```{r echo = FALSE, message=FALSE, warning=FALSE, fig.width = 8, fig.height = 5}
 #View(time_series_long_joined)
 library(tidyverse)
 
@@ -363,7 +363,7 @@ dev.off()
 
 ### 5. Use Mutate to make a new column with deaths/confirmed cases (Hint: this might be best done after joining the tables, but before pivoting longer).
 
-```{r, fig.width = 8, fig.height = 5}
+```{r}
 #library(tidyverse)
 #?mutate
 
@@ -377,7 +377,7 @@ head(DC)
 
 ### 6. Plot US deaths/confirmed cases per day.
 
-```{r, fig.width = 8, fig.height = 5}
+```{r echo = FALSE, message=FALSE, warning=FALSE, fig.width = 8, fig.height = 5}
 DC %>%
   filter(Country_Region == "US") %>%
   ggplot(aes(x=Date, y=DC)) +
@@ -405,7 +405,7 @@ head(top_death)
 ```
 
 Single graph of countries with highest death toll 
-```{r}
+```{r echo = FALSE, message=FALSE, warning=FALSE}
 ggplot(data = top_death, mapping = aes(x = Country_Region, y = sum_death)) +
   geom_bar(stat = "identity") +
   labs(title = "Countries with Highest COVID-19 Deaths",
@@ -430,7 +430,7 @@ head(top_death_timeseries)
 
 ### 10. Apply a theme other than the one used in the Data Carpentries tutorial to the graph in Ex8.
 
-```{r, fig.width = 8, fig.height = 5}
+```{r echo = FALSE, message=FALSE, warning=FALSE, fig.width = 8, fig.height = 5}
 ggplot(data = top_death_timeseries, aes(x = Date,  y = Deaths, color = Country_Region)) + 
   geom_jitter() +
   facet_wrap(facets = vars(Country_Region)) +
@@ -497,7 +497,7 @@ US_Sum_State <-US_time_series_confirmed_long %>%
 head(US_Sum_State)
 ```
 Plotting cumulative sum of US covid-19 Cases by state over time 
-```{r, fig.width = 10, fig.height = 5}
+```{r echo = FALSE, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 5}
 ggplot(data = US_Sum_State, aes(x = Date, y = Cases, color = Province_State)) +
   geom_area() +
   facet_wrap(facets = vars(Province_State)) +
