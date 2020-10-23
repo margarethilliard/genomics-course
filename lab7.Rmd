@@ -32,10 +32,12 @@ BiocManager::install("rnaseqGene")
 BiocManager::install("airway")
 BiocManager::install("tximeta")
 BiocManager::install("DESeq2")
+BiocManager::install("DESeq")
 BiocManager::install("Gviz")
 BiocManager::install("sva")
 BiocManager::install("RUVSeq")
 BiocManager::install("fission")
+BiocManager::install("EDASeq")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, results="asis"}
@@ -603,7 +605,7 @@ head(resOrdered)
 #  write.csv(resOrderedDF, file = "results.csv")
 ```
 
-```{r eval=FALS}
+```{r eval=FALSE}
 #  library("ReportingTools")
 #  htmlRep <- HTMLReport(shortName="report", title="My report",
 #                        reportDirectory="./report")
@@ -789,5 +791,7 @@ The session information should also always be included in any emails to the Bioc
 ```{r}
 sessionInfo()
 ```
+
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015]. Data from [@Himes2014] was analyzed using the DESeq2 package [@Love2014]. 
 
 # References 
