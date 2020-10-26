@@ -24,6 +24,7 @@ knitr::opts_chunk$set(echo = TRUE)
 >- [Lab 6 : Data Maps and Interactive Graphs from the COVID-19 reporting data](Lab-6.html)
 >- [Lab7: RNA-Seq workflow: gene-level exploratory analysis and differential expression](lab7.html)
 >- [Lab 8: Sequence Alignment, Phylogenetic Analysis and Tree Visualization](lab8.html)
+>- [Lab 9A : Programming in R - Regular Expressions](lab9.html)
 *** 
 
 ![](images/skippy.jpeg)
