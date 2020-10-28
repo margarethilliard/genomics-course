@@ -1,5 +1,5 @@
 ---
-title: "lab9"
+title: "Lab 9"
 author: "Margaret Hilliard"
 date: "10/26/2020"
 output: html_document
@@ -125,7 +125,7 @@ x <- c("grey", "gray")
 str_view(x, "gr(e|a)y")
 ```
 
-### Exercises
+### Exercise
 
 Create regular expressions to find all words that:
 
@@ -394,7 +394,7 @@ x <- c("a", "a b", "a b c")
 str_extract_all(x, "[a-z]", simplify = TRUE)
 ```
 
-### Exercises
+### Exercise
 In the previous example, you might have noticed that the regular expression matched “flickered”, which is not a colour. Modify the regex to fix the problem.
 
 It matches “flickered” because it matches “red”. The problem is that the previous pattern will match any word with the name of a color inside it. We want to only match colors in which the entire word is the name of the color. We can do this by adding a \b (to indicate a word boundary) before and after the pattern:
@@ -437,7 +437,7 @@ tibble(sentence = sentences) %>%
 ```
 Like str_extract(), if you want all matches for each string, you’ll need str_match_all().
 
-### Exercises
+### Exercise
 
 Find all words that come after a “number” like “one”, “two”, “three” etc. Pull out both the number and the word.
 ```{r}
