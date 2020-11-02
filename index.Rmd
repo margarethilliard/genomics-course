@@ -8,11 +8,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-![](images/IMG_2867.jpeg) 
-
 *** 
 
-## lab reports
+## lab reports:
 >- [Lab 1 : Introduction to R and Reproducible Research](lab1_Hilliard.html)
 >- [Lab 2 : git, GitHub and Rstudio projects](lab2.html)
 >- [Lab 3A : Data Wrangling Part 1 - Starting with the Data](Lab3A.html)
@@ -26,8 +24,20 @@ knitr::opts_chunk$set(echo = TRUE)
 >- [Lab 8: Sequence Alignment, Phylogenetic Analysis and Tree Visualization](lab8.html)
 >- [Lab 9: Programming in R - Regular Expressions](lab9.html)
 >- [Lab 9A: Programming in R - Control Structures and Functions](Lab_9A.html)
+>- [Lab 10: Population genomics based on high throughput sequencing (HTS)](Lab10.html)
 
 *** 
 
+## dog tax:
+
+![](images/IMG_2867.jpeg) 
+
+this is Skippy
+
 ![](images/skippy.jpeg)
 
+she's a chihuahua mix 
+
+![](images/Screen Shot 2020-10-08 at 8.15.19 PM.png)
+
+taking a tiny nap 
