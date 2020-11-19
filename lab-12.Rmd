@@ -1,0 +1,527 @@
+---
+title: "Lab 12: Network Analysis using Cytoscape and RCy3"
+author: "Margaret Hilliard"
+date: "11/16/2020"
+output: html_document
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction to Network Analysis
+
+Cytoscape is a popular tool for network analysis. It has been in developed for over 20 years and now has a robust ecosystem with many plugins/apps to for specific uses. Their is a detail user manual (which can be edited on github) and tutorials.
+
+Within R there are several alternative graph visualization packages including igraph and the Bioconductor package graph. Both are excellent packages however this past year a new R interface to Cytocape Rcy3 was released which we will explore today. Here is the initial publication describing Rcy3.
+
+## On the Computer
+
+### Cytoscape
+
+    Download, install and open Cytoscape
+    Read through the Tour of Cytoscape
+    Do the recommended exercises on Basic Data Visualization and Differentially Expressed Genes
+
+### RCy3
+
+    Go through the first vignette Overview of RCy3
+
+#### Notes
+
+Check to make sure it can connect to Cytoscape
+
+```{r}
+library(RCy3)
+cytoscapePing()
+```
+Note that the code for the first graph will run in the R console, but not in Rmd (I am not sure why at the moment). All other code chunks knit fine, but the images appear in Cytoscape.
+
+
+c("node 0","node 1","node 2","node 3"),
+           group=c("A","A","B","B"), # categorical strings
+           score=as.integer(c(20,10,15,5)), # integers
+           stringsAsFactors=FALSE)
+edges <- data.frame(source=c("node 0","node 0","node 0","node 2"),
+           target=c("node 1","node 2","node 3","node 3"),
+           interaction=c("inhibits","interacts","activates","interacts"),  # optional
+           weight=c(5.1,3.0,5.2,9.9), # numeric
+           stringsAsFactors=FALSE)
+
+createNetworkFromDataFrames(nodes,edges, title="my first network", collection="DataFrame Example")
+
+
+The network will not appear in R, but in Cytoscape
+
+##  Basic Data Visualization in Cytoscape 
+
+This tutorial presents a scenario of how expression and network data can be combined to tell a biological story and includes these concepts:
+
+    Visualizing networks using expression data.
+    Filtering networks based on expression data.
+    Assessing expression data in the context of a biological network
+
+### Loading the Network 
+
+In the Network Search interface in the Control Panel, select NDEx from the drop-down, and type in "GAL1 GAL4 GAL80".
+In the search results, find the galFiltered network with data. Click the Import network to Cytoscape icon to the left of the network name. The network will open with the default style. 
+
+### Visualizing Expression Data on Networks
+
+Probably the most common use of expression data in Cytoscape is to set the visual properties of the nodes (color, shape, border) in a network according to expression data. This creates a powerful visualization, portraying functional relation and experimental response at the same time. Here, we will show an example of doing this.
+
+The data used in this example is from yeast, and represents an experiment of perturbations of the genes Gal1, Gal4, and Gal80, which are all yeast transcription factors. 
+
+You can select nodes in the network by Shift + Click and Drag or by Shift + clicking on multiple nodes.
+Selecting one or more nodes in the network will update the Node Table to show only the corresponding row(s).
+
+We can now use the data to manipulate the visual properties of the network by mapping specific data columns to visual style properties:
+
+    The gal80Rexp expression values will be mapped to node color; nodes with low expression will be colored blue, nodes with high expression will be colored red.
+    Significance for expression values will be mapped to Node Border Width, so nodes with significant changes will appear with a thicker border.
+
+### Set Node Fill Color
+
+    Click on the Style tab in the Control Panel.
+    Find Fill Color in the list of properties and expand it to view the mapping options.
+    Click the -- select value -- cell in the Column section, and select gal80Rexp in the drop-down.
+    Click the -- select value-- cell in the Mapping Type section, and select Continuous Mapping in the drop-down.
+    This produces an initial gradient ranging from blue to red for expression values. Notice that the nodes in the network change color. For our purposes, this default gradient works so we don't need to edit it.
+
+### Set Default Node Color
+
+Some nodes in the network don't have any data, and for those nodes, the default color applies. In our case, the default color is blue, which falls within the spectrum of our blue-red gradient. This is not ideal for data visualization, so a useful trick is to choose a color outside the gradient spectrum to distinguish nodes with no defined expression value.
+
+    Still in the Style tab, under Fill Color, click the Def. (leftmost) square next to Fill Color and choose a dark gray color.
+
+### Set Node Border Width
+
+
+    Click on the middle square (Map.) next to the Border Width row in the Style panel.
+    Click the -- select value -- cell in the Column section, and select gal80Rsig in the drop-down.
+    Click the -- select value-- cell in the Mapping Type section, and select Continuous Mapping in the drop-down.
+    Double-click on the gradient, which defines the node border width over the range of p values.
+    First, we will define the min/max of the range of p values we are interested in, that is anything under 0.05. Click on Set Min and Max... and set the max to 0.05. Click OK to save.
+    Click on the handle for the max value (black triangle on the right-most end of the gradient) and set the value to 10 in the Node Border Width field.
+
+### Creating a Legend
+
+Download the legend creater via the [Cytoscape App Manager](https://apps.cytoscape.org/apps/legendcreator)
+
+    In the Control Panel, go to the Legend Panel. This is the interface for the Legend Creator app, and will list multiple options for creating a legend.
+    For our purposes, the default settings are satisfactory. Click Add Legend to continue. The legend will appear in the lower left of the network view.
+
+### Layouts
+
+An important aspect of network visualization is the layout, meaning the positioning of nodes and edges. Our network had a preset layout in the original file you imported, but this can be changed.
+
+Let's change the layout to Degree Sorted Circle Layout by selecting Layout → Degree Sorted Circle Layout. In this layout, nodes are sorted by degree (connectedness), with the highest degree node at the 6 o'clock position, and remaining nodes are sorted counter clock-wise based on decreasing degree.
+
+For this network, a degree-sorted circle layout may not be the most effective. Instead, let's try a force-directed layout instead, which may work better with this network.
+
+### Select Nodes
+
+Cytoscape allows you to easily filter and select nodes and edges based on data attributes. Next, we will select a subset of nodes with high expression in the gal80 knockout:
+
+    Go to the Select tab in the Cytoscape Control Panel (the leftmost panel).
+    Click on the + button and select Column Filter.
+    Under Choose column..., select Node: gal80Rexp. Notice how all the nodes in the network are selected at first.
+    Using the slider or the input fields, specify values of 2 or higher by changing the minimum value to 2.
+
+You should now see only a few nodes in the network selected (highlighted yellow).
+
+### Expand Selection and Create New Network
+
+We have now selected only the few top expressing nodes. To see the context of these nodes in the larger network, we can expand the selection of nodes to include the nodes connecting to the selected nodes, i.e. the first neighbors. Once we have that larger selection, we can create a new network.
+
+    Select the first neighbors of selected nodes by clicking the First Neighbors of Selected Nodes → Undirected button in the toolbar.
+    Create a new network from the current selection by clicking the New Network From Selection, All edges button in the toolbar.
+    Click on the Preferred Layout button in the toolbar to apply a force-directed layout.
+    
+### Exploring Nodes
+
+    Right-click on any node (for example GAL4).
+    Select the menu External Links → Sequences and Proteins → Ensembl Gene View → yeast.
+    This will launch a browser window and search the Ensembl database for the term YPL248C, the name of the node.
+
+Digging into the biology of this network, it turns out that GAL4 is repressed by GAL80. Both nodes (GAL4 and GAL11) show fairly small changes in expression, and neither change is statistically significant: they are pale blue with thin borders. These slight changes in expression suggest that the critical change affecting the red nodes might be somewhere else in the network, and not either of these nodes. GAL4 interacts with GAL80, which shows a significant level of repression: it is medium blue with a thicker border.     
+    
+Note that while GAL80 shows evidence of significant repression, most nodes interacting with GAL4 show significant levels of induction: they are rendered as red rectangles. GAL11 is a general transcription co-factor with many interactions. 
+    
+    Putting all of this together, we see that the transcriptional activation activity of Gal4 is repressed by Gal80. So, repression of Gal80 increases the transcriptional activation activity of Gal4. Even though the expression of Gal4 itself did not change much, the Gal4 transcripts were much more likely to be active transcription factors when Gal80 was repressed. This explains why there is so much up-regulation in the vicinity of Gal4.
+    
+#### Summary
+
+We have:
+
+    Explored a yeast interactome from a transcription factor knockout experiment
+    Created a visual style using expression value as node color and with border width mapped to significance
+    Selected high expressing genes and their neighbors and created a new network
+
+Finally, we can now export this network as a publication-quality image....
+
+### Saving Results
+
+Cytoscape provides a number of ways to save results and visualizations:
+
+    As a session: File → Save, File → Save As...
+    As an image: File → Export → Network to Image...
+    To the web: File → Export → Network to Web Page... (Example)
+    To a public repository: File → Export → Network to NDEx, or File → Export → Collection to NDEx
+    As a graph format file: File → Export → Network to File.
+    Formats:
+        CX JSON
+        Cytoscape.js JSON
+        GraphML
+        PSI-MI
+        XGMML
+        SIF
+
+## Differentially Expressed Genes Network Analysis in Cytoscape 
+
+This protocol describes a network analysis workflow in Cytoscape for a set of differentially expressed genes. Points covered:
+
+    Retrieving relevant networks from public databases
+    Network functional enrichment analysis
+    Integration and visualization of experimental data
+    Exporting network visualizations
+
+### Background
+
+Ovarian serous cystadenocarcinoma is a type of epithelial ovarian cancer which accounts for ~90% of all ovarian cancers. The data used in this protocol are from The Cancer Genome Atlas, in which multiple subtypes of serous cystadenocarcinoma were identified and characterized by mRNA expression.
+
+We will focus on the differential gene expression between two subtypes:
+Mesenchymal and Immunoreactive.
+
+For convenience, the data has already been analyzed and pre-filtered, using log fold change value and adjusted p-value.
+
+### Network Retrieval
+
+Many public databases and multiple Cytoscape apps allow you to retrieve a network or pathway relevant to your data. For this workflow, we will use the STRING app. Some other options include:
+
+    WikiPathways
+    NDEx
+    GeneMANIA
+    
+Retrieve Networks from STRING by installing the stringApp from the Cytoscape App store. 
+
+### Example 1: STRING Protein Query Up-regulated Genes
+
+Copy the genes from the file named "TCGA-Ovarian-MesenvsImmuno-data-up.csv" in the data folder to the Network Search bar at the top of the Network Panel, select STRING protein query from the drop-down, and paste in the list of up-regulated genes.
+Open the options panel and confirm you are searching Homo sapiens with a cutoff of 0.4 and 0 maximum additional interactors.
+Click the search icon to search. The resulting network will load automatically.
+
+The networks consists of one large connected component, several smaller networks, and some unconnected nodes. We will use only the largest connected component for the rest of the tutorial.
+
+    Using Shift-drag, select all nodes and edges for the largest connected component.
+    Select File → New Network → From Selected Nodes, Selected Edges.
+
+### Data Integration
+
+Next we will import log fold changes and p-values from our TCGA dataset and use them to create a visualization. Our data from TCGA has NCBI Gene identifiers (formerly Entrez), so before importing the data we are going to use the ID Mapper functionality in Cytoscape to map the network to NCBI Gene.
+
+    In the Node Table, right-click on the column header of the display name column and click Map column....
+    In the ID Mapping interface, select Human as Species, HGNC as Map from and Entrez as To. Click OK to continue.
+    IDMapper displays a report of how many identifiers were mapped. Make note of this information as it impacts all downstream analysis; If the mapping was unsuccessful, downstream analysis will be as well.
+
+In this example it converted 141 of 142 
+
+We can now import the differential gene expression data.
+
+    Download a local copy of TCGA-Ovarian-MesenvsImmuno_data.csv.
+    Load the TCGA-Ovarian-MesenvsImmuno_data.csv file under File menu, select Import → Table from File....
+    Make sure you select the new Entrez Gene column as the Key column for Network to match the correct column with the key column of the data.
+    To complete the import, click OK. Two new columns of data will be added to the Node Table.
+
+### Visualization
+
+Next, we will create a visualization of the imported data on the network. For more detailed information about how to create visualizations, see the Visualizing Data tutorial.
+
+    In the Style tab of the Control Panel, switch the style from STRING style v1.5 to default in the drop-down at the top.
+    Change the default node shape to ellipse and check Lock node width and height.
+    Set the default node fill color to light gray.
+    Set the default Border Width to 2, and make the default Border Paint dark gray.
+    For node Fill Color, create a continuous mapping for logFC, with the default ColorBrewer yellow-orange-red shades gradient.
+    Finally, for Node Label, set a passthrough mapping for display name.
+    
+Apply the yFiles Organic layout and the network will look something like this:
+
+[](images/String Network - 1(1).png)
+
+### STRING Enrichment
+
+The STRING app has built-in enrichment analysis functionality, which includes enrichment for GO Process, GO Component, GO Function, InterPro, KEGG Pathways, and PFAM.
+
+    In the STRING tab of the Results Panel, click the Functional Enrichment button. Keep the default settings.
+    When the enrichment analysis is complete, a new tab titled STRING Enrichment will open in the Table Panel.
+
+The STRING app includes several options for filtering and displaying the enrichment results. The features are all available at the top of the STRING Enrichment tab. We are going to filter the table to only show GO Process.
+
+    At the top left of the STRING enrichment tab, click the filter icon . Select GO Process and check the Remove redundant terms check-box. Then click OK.
+    Next, we will add a split donut chart to the nodes representing the top terms by clicking on .
+    Explore custom setting via in the top right of the STRING enrichment tab.
+
+### STRING Protein Query Down-regulated Genes
+
+The same workflow (network search, data integration, visualizationcan and enrichment analysis) can be repeated for the set of down-regulated genes.
+
+    Query STRING protein with the list of symbols in TCGA-Ovarian-MesenvsImmuno-data-down.csv.
+    Create a subnetwork for the largest connected component, then map Uniprot identifiers to NCBI gene and load the data.
+    Create a visualization as described previously. To distinguish between the visualizations of up- and down-regulated results, pick a different node fill color palette, for example ColorBrewer yellow-green shades.
+
+Mapped 93 of 95 
+
+It looks like this:
+[](images/down-reg.png)
+
+### Example 2: STRING Disease Query in Cytoscape 
+
+So far, we queried the STRING database with a set of genes we knew were differentially expressed. Next, we will query the STRING disease database to retrieve a network genes assocuated with ovarian cancer, which will be completely independent of our dataset.
+
+    In the Network Search bar at the top of the Network Panel, select STRING disease query from the drop-down, and type in ovarian cancer.
+    Open the options panel and change the confidence score cutoff to 0.95.
+    Click enter, or the search icon, to search.
+
+This will bring in the top 100 ovarian cancer associated genes connected with a confidence score greater than 0.95.
+
+### Data Integration
+
+Next we will import differential gene expression data from our TCGA dataset to create a visualization. Just like the previous example, we will need to do some identifier mapping to match the data to the network.
+
+    First, lets focus on the largest connected subset by either deleting the unconnected nodes, or creating a subnetwork of the largest connected component.
+    In the Node Table, right-click on the column header of the canonical name column and click Map column....
+    In the ID Mapping interface, select Human as Species, Uniprot as Map from and Entrez as To. Click OK to continue.
+    A notification will let you know how many of the nodes were successfully mapped. A new column (all the way to the right) with NCBI Gene identifiers will be added to the Node Table.
+    IDMapper displays a report of how many identifiers were mapped. Make note of this information as it impacts all down-stream analysis; If the mapping was unsuccessful, downstream analysis will be as well.
+
+Note: 79 of 99 gene identifiers were mapped 
+
+    Next, we can load the data. Download a local copy of TCGA-Ovarian-MesenvsImmuno_data.csv. Then go to File → Import → Table from File... and select the data file.
+    Load the TCGA-Ovarian-MesenvsImmuno_data.csv file under File menu, select Import → Table from File....
+    Make sure you select the new Entrez Gene column as the Key column for Network to match the correct column with the key column of the data.
+    To complete the import, click OK. Two new columns of data will be added to the Node Table.
+
+### Visualization
+
+Next, we will create a visualization of the imported data on the network. For more detailed information about how to create visualizations, see the Visualizing Data tutorial.
+
+    In the Style tab of the Control Panel, switch the style from STRING style v1.5 to default in the drop-down at the top.
+    Change the default node shape to ellipse and check Lock node width and height.
+    Set the default node fill color to light gray.
+    Set the default Border Width to 2, and make the default Border Paint dark gray.
+    For node Fill Color, create a continuous mapping for logFC, with the default ColorBrewer red-blue gradient.
+    Finally, for Node Label, set a passthrough mapping for display name.
+
+It looks like this:
+
+[](images/SN-cancer.png)
+
+### Visualization: Cancer Drivers
+
+The TCGA found several genes that were commonly mutated in ovarian cancer, so called "cancer drivers". We can add information about these genes to the network visualization, by changing the visual style of these nodes. Three of the most important drivers are TP53, BRCA1 and BRCA2. We will add a thicker, clored border for these genes in the network.
+
+    Select all three driver genes by holding down the Command key while clicking each of the genes.
+    In the Style panel, add a style bypass for node Border Width (7) and node Border Paint (bright pink for example). You can create a style bypass by clicking the Bypass (Byp.) column for each attribute.
+
+It looks like this now:
+
+[](images/cancer-drivers.png)
+
+#### Other Analysis Options:
+
+    Exploring networks: finding paths, hubs and modules (clusterMaker, MCODE, jActiveModules, NetworkAnalyzer)
+    Extending networks with Transcription Factors, miRNAs, etc using CyTargetLinker
+
+
+## RCy3
+
+Cytoscape is a well-known bioinformatics tool for displaying and exploring biological networks. R is a powerful programming language and environment for statistical and exploratory data analysis. RCy3 uses CyREST to communicate between R and Cytoscape, allowing any graphs (e.g., igraph, graphNEL or dataframes) to be viewed, explored and manipulated with the Cytoscape point-and-click visual interface. Thus, via RCy3, these two quite different, quite useful bioinformatics software environments are connected, mutually enhancing each other, providing new possibilities for exploring biological data.
+
+### Installation 
+
+```{r}
+library("RCy3")
+```
+
+###  Prerequisites
+
+In addition to this package (RCy3), you will need:
+
+    Cytoscape 3.6.1 or greater, which can be downloaded from http://www.cytoscape.org/download.php. Simply follow the installation instructions on screen.
+
+### Getting Started 
+
+First, launch Cytoscape and keep it running whenever using RCy3. Confirm that you have everything installed and running:
+
+```{r}
+cytoscapePing ()
+cytoscapeVersionInfo ()
+```
+
+### My First Network 
+
+Let’s create a Cytoscape network from some basic R objects
+```{r eval=FALSE}
+nodes <- data.frame(id=c("node 0","node 1","node 2","node 3"),
+           group=c("A","A","B","B"), # categorical strings
+           score=as.integer(c(20,10,15,5)), # integers
+           stringsAsFactors=FALSE)
+edges <- data.frame(source=c("node 0","node 0","node 0","node 2"),
+           target=c("node 1","node 2","node 3","node 3"),
+           interaction=c("inhibits","interacts","activates","interacts"),  # optional
+           weight=c(5.1,3.0,5.2,9.9), # numeric
+           stringsAsFactors=FALSE)
+
+createNetworkFromDataFrames(nodes,edges, title="my first network", collection="DataFrame Example")
+```
+
+#### Switch styles 
+
+Check out the marquee style!
+```{r eval=FALSE}
+setVisualStyle('Marquee')
+```
+
+#### My own style 
+
+Create your own style with node attribute fill mappings and some defaults
+```{r eval=FALSE}
+style.name = "myStyle"
+defaults <- list(NODE_SHAPE="diamond",
+                 NODE_SIZE=30,
+                 EDGE_TRANSPARENCY=120,
+                 NODE_LABEL_POSITION="W,E,c,0.00,0.00")
+nodeLabels <- mapVisualProperty('node label','id','p')
+nodeFills <- mapVisualProperty('node fill color','group','d',c("A","B"), c("#FF9900","#66AAAA"))
+arrowShapes <- mapVisualProperty('Edge Target Arrow Shape','interaction','d',c("activates","inhibits","interacts"),c("Arrow","T","None"))
+edgeWidth <- mapVisualProperty('edge width','weight','p')
+
+createVisualStyle(style.name, defaults, list(nodeLabels,nodeFills,arrowShapes,edgeWidth))
+setVisualStyle(style.name)
+```
+Pro-tip: if you want to set NODE_WIDTH and NODE_HEIGHT independently, you also need to unlock the node dimensions with…
+```{r eval=FALSE}
+lockNodeDimensions(FALSE, style.name)
+```
+
+### Bioconductor graph example 
+
+Alternatively, you might want to start from a Bioconductor graphNEL object. Here we create a 4-node graph in R, send it to Cytoscape for display and layout. For the sake of simplicity, no node attributes and no visual styles are included; those topics are covered in subsequent steps.
+
+```{r eval=FALSE}
+g = new ('graphNEL', edgemode='directed')
+g = graph::addNode ('A', g)
+g = graph::addNode ('D', g)
+g = graph::addNode ('C', g, edges = list('D'))
+g = graph::addNode ('B', g, edges = list(c('A','D','C')))
+```
+
+```{r eval=FALSE}
+?createNetworkFromGraph()
+createNetworkFromGraph (g)
+```
+You should now have the structure of this 4-node graph with a basic, default style. Fortunately, Cytoscape has some built-in rendering rules in which (and unless instructed otherwise) nodes and edges are rendered and a default (user-preference) layout algorithm is applied.
+
+#### Add node attributes
+
+We often know quite a lot about the nodes and edges in our graphs. By conveying this information visually, the graph will be easier to explore. For instance, we may know that protein A phosphorylates protein B, that A is a kinase and B a transcription factor, and that their mRNA expression (compared to a control) is a log2 fold change of 1.8 and 3.2 respectively. One of the core features of Cytoscape is visual styles, which allow you to specify how data values (e.g., kinase',transcription factor’; expression ratios) should be conveyed in the visual properties of the graph (e.g., node shape, node color or size).
+
+We continue with the simple 4-node graph, adding two kinds data values (moleculeType' andlog2fc’). The easiest way to do this is via data.frames. However, you can also include attributes together with the original graph models as Bioconductor graphs, igraphs or data.frames and then use the provided create functions to create and load in a single step (see createNetworkFromGraph, createNetworkFromIgraph and createNetworkFromDataFrames functions). Check out the other vignettes for more examples.
+```{r eval=FALSE}
+df <- data.frame (moleculeType=c('kinase','TF','cytokine','cytokine'),
+                     log2fc=c(1.8,3.0,-1.2,-2.5),
+                     row.names = c('A','B','C','D'), # row.names = node names
+                     stringsAsFactors = FALSE)       # important when loading strings!
+    loadTableData (df)
+```
+Note that adding the attributes does not in itself cause the appearance of the graph to change. Such a change requires that you specify and apply visual style mappings, which will be explained in the next section. You can, however, examine these attributes in Cytoscape, using Cytoscape’s the Data Panel to display data values associated with selected nodes immediately below the Cytoscape window.
+
+#### Modifying the display: defaults and mappings
+
+RCy3 provides an easy way to not only change the default styles, but more interestingly, RCy3 also provides easy access to mapping your data to visual styles, e.g., allowing the size, shape and color of nodes and edges to be determined by the data you have associated with those nodes and edges.
+
+First, let’s change the the defaults.
+```{r eval=FALSE}
+setNodeShapeDefault ('OCTAGON')
+    setNodeColorDefault ('#AAFF88')
+    setNodeSizeDefault  (60)
+    setNodeFontSizeDefault (30)
+```
+Now we will add some visual mappings. Let’s map `moleculeType’ to node shapes. First, we can see which shapes are available in Cytoscape, then we can define the mapping with paired lists.
+```{r eval=FALSE}
+getNodeShapes ()   # diamond, ellipse, trapezoid, triangle, etc.
+column <- 'moleculeType'
+values <- c ('kinase',  'TF','cytokine')
+shapes <- c ('DIAMOND', 'TRIANGLE', 'RECTANGLE')
+setNodeShapeMapping (column, values, shapes)
+```
+The node shape mapping is an example of a discrete mapping, where a style is defined for each, discrete value. This is useful for categorical data (like type) where there is only a limited set of possible values. This is in contrast to the other two other types of mappings: continuous and passthrough. In the case of expression values, for example, we will want to use continuous mapping (e.g., to node color), defining a small set of control points, rather than an explicit color for each possible data value. Cytoscape will simply interpolate between the control points to provide a gradient of colors. Let’s try that one now
+```{r eval=FALSE}
+column <- 'log2fc'
+control.points <- c (-3.0, 0.0, 3.0)
+colors <-  c ('#5588DD', '#FFFFFF', '#DD8855')
+setNodeColorMapping (column, control.points, colors)
+```
+Note that there are three colors and three control points. However, you can also specify two additional colors beyond the number of control points if you want to set extreme (or out-of-bounds) colors for values less than or greater than your control points.
+```{r eval=FALSE}
+control.points <- c (-2.0, 0.0, 2.0)
+colors <-  c ('#2255CC', '#5588DD', '#FFFFFF', '#DD8855','#CC5522')
+setNodeColorMapping (column, control.points, colors)
+```
+Now, add a node size rule, using log2fc again as controlling node values.
+```{r eval=FALSE}
+control.points = c (-3.0, 2.0, 3.0)
+sizes = c (20, 80, 90)
+setNodeSizeMapping (column, control.points, sizes)
+```
+If you recall the third type of mapping, passthrough, we can see it already working in our current network example. The node labels! By default, the name column is mapped to the node label property using passthrough logic: the value is passed directly to the style property.
+
+#### Selecting nodes
+
+Let us now try selecting nodes in Cytoscape from R. Select the C node by name:
+```{r eval=FALSE}
+selectNodes('C', 'name')
+getSelectedNodes()
+```
+Now we wish to extend the selected nodes to include the first neighbors of the already-selected node B. This is a common operation: for instance, after selecting one or more nodes based on experimental data or annotation, you may want to explore these in the context of interaction partners (in a protein-protein network) or in relation to upstream and downstream partners in a signaling or metabolic network. Type:
+```{r eval=FALSE}
+selectFirstNeighbors()
+```
+You will see that three nodes are now selected. Get their names back to R as a list:
+```{r eval=FALSE}
+node.names <- getSelectedNodes ()
+```
+And, finally, deselection works as you’d expect by means of a general clearSelection function:
+```{r eval=FALSE}
+clearSelection()
+?clearSelection
+```
+
+### Saving and Export 
+
+Session files save everything. As with most project software, we recommend saving often!
+```{r eval=FALSE}
+saveSession('vignette_session') #.cys
+```
+Note: If you don’t specify a complete path, the files will be saved relative to your current working directory in R.
+
+### Saving high resolution image files
+
+You can export extremely high resolution images, including vector graphic formats.
+```{r eval=FALSE}
+full.path=paste(getwd(),'vignette_image',sep='/')
+exportImage(full.path, 'PNG', zoom=200) #.png scaled by 200%
+exportImage(full.path, 'PDF') #.pdf
+?exportImage
+```
+### Browse available functions, commands and arguments
+
+RCy3 functions
+```{r}
+help(package=RCy3)
+```
+
+Application written in R [@RCoreTeam] using the Shiny framework [@Chang2015], along with the Cytoscape program [@Shannon2003] and RCy3 package [Ono3015]. 
+
+# References 
